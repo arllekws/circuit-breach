@@ -83,5 +83,5 @@ export function desenharPausa(ctx: Ctx): void {
   const r = caixaCentral(ctx, 90, CORES.texto);
   const cx = r.x + r.w / 2;
   escrever(ctx, 'PAUSADO', cx, r.y + 30, { tamanho: 16, negrito: true, alinhar: 'center' });
-  escrever(ctx, 'Esc: continuar · R: reiniciar', cx, r.y + 62, { cor: CORES.textoSecundario, alinhar: 'center' });
+  escrever(ctx, 'Esc: continuar · R: reiniciar · Enter: menu', cx, r.y + 62, { cor: CORES.textoSecundario, alinhar: 'center' });
 }

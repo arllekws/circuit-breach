@@ -3,15 +3,26 @@ import { comandoDaTecla, ouvirTeclado, type Comando } from './entrada/teclado';
 import { carregarFases } from './fases/carregar';
 import { aplicar } from './jogo/aplicar';
 import { novoEstado } from './jogo/estado';
+import {
+  carregarProgresso,
+  faseLiberada,
+  registrarVitoria,
+  salvarProgresso,
+  type Progresso,
+} from './jogo/progresso';
+import { circuitoEmFoco } from './jogo/regras';
 import type { Estado, Fase, Posicao } from './jogo/tipos';
 import { preencher } from './render/desenho';
 import { desenharAviso, desenharBarra, desenharPausa, desenharRodape, desenharVitoria } from './render/hud';
 import { ajustarCanvas, TELA } from './render/layout';
 import { desenharMapa } from './render/mapa';
+import { desenharMenu, FASES_POR_LINHA } from './render/menu';
 import { desenharDica, desenharPainel } from './render/painelCircuito';
+import { desenharScanner } from './render/scanner';
 import { ANIMACAO_MS, CORES } from './render/tema';
 
 // Ponto de entrada: junta entrada → jogo → render num laço de requestAnimationFrame.
+// Aqui só há navegação entre telas e detalhes visuais; as regras ficam em jogo/.
 
 const DURACAO_DO_AVISO_MS = 2600;
 
@@ -22,11 +33,18 @@ function iniciar(fases: readonly Fase[]): void {
   ajustarCanvas(canvas, ctx);
   window.addEventListener('resize', () => ajustarCanvas(canvas, ctx));
 
-  let indice = 0;
-  let estado: Estado = novoEstado(fases[indice] as Fase);
+  const ids = fases.map((fase) => fase.id);
+  let progresso: Progresso = carregarProgresso(window.localStorage);
+  let tela: 'menu' | 'fase' = 'menu';
+  let indice = 0; // fase escolhida no menu / fase em jogo
+  let estado: Estado = novoEstado(fases[0] as Fase);
   // Só visual: de onde o hacker está deslizando e desde quando.
   let deslize: { de: Posicao; inicio: number } = { de: estado.jogador, inicio: 0 };
   let aviso: { texto: string; cor: string; ate: number } | null = null;
+
+  const avisar = (texto: string): void => {
+    aviso = { texto, cor: CORES.perigo, ate: performance.now() + DURACAO_DO_AVISO_MS };
+  };
 
   const trocarEstado = (novo: Estado): void => {
     if (novo.evento === 'andou' || novo.evento === 'vitoria') {
@@ -34,38 +52,60 @@ function iniciar(fases: readonly Fase[]): void {
     } else if (novo.jogador !== estado.jogador) {
       deslize = { de: novo.jogador, inicio: 0 }; // reinício: sem deslizar
     }
-    if (novo.evento === 'alerta_estourou') {
-      aviso = {
-        texto: 'ALERTA MÁXIMO · seguranças a caminho · fase reiniciada',
-        cor: CORES.perigo,
-        ate: performance.now() + DURACAO_DO_AVISO_MS,
-      };
+    if (novo.evento === 'alerta_estourou') avisar('ALERTA MÁXIMO · seguranças a caminho · fase reiniciada');
+    if (novo.evento === 'alarme') avisar('LASER DISPAROU · alarme · fase reiniciada');
+    if (novo.evento === 'vitoria') {
+      progresso = registrarVitoria(progresso, novo.fase.id, novo.estrelas);
+      salvarProgresso(window.localStorage, progresso);
     }
     estado = novo;
   };
 
+  const abrirFase = (qual: number): void => {
+    indice = qual;
+    tela = 'fase';
+    aviso = null;
+    estado = novoEstado(fases[indice] as Fase);
+    deslize = { de: estado.jogador, inicio: 0 };
+  };
+
+  const comandoNoMenu = (comando: Comando): void => {
+    if (comando.tipo === 'mover') {
+      const passo = { esquerda: -1, direita: 1, cima: -FASES_POR_LINHA, baixo: FASES_POR_LINHA }[comando.direcao];
+      const alvo = indice + passo;
+      if (alvo >= 0 && alvo < fases.length) indice = alvo;
+    } else if (comando.tipo === 'confirmar' && faseLiberada(ids, progresso, indice)) {
+      abrirFase(indice);
+    }
+  };
+
   const executar = (comando: Comando): void => {
+    if (tela === 'menu') {
+      comandoNoMenu(comando);
+      return;
+    }
     if (comando.tipo === 'confirmar') {
-      if (estado.situacao !== 'vitoria') return;
-      indice = (indice + 1) % fases.length;
-      trocarEstado(novoEstado(fases[indice] as Fase));
+      if (estado.situacao === 'vitoria' && indice + 1 < fases.length) abrirFase(indice + 1);
+      else if (estado.situacao !== 'jogando') tela = 'menu'; // pausado, ou venceu a última fase
       return;
     }
     trocarEstado(aplicar(estado, comando));
   };
   ouvirTeclado(executar);
 
-  // Só em desenvolvimento: ?teclas=w,w,d,e reproduz uma sequência de teclas ao abrir
+  // Só em desenvolvimento: ?teclas=Enter,w,w,d,e reproduz uma sequência de teclas ao abrir
   // (para conferir telas e ensaiar a apresentação). Não existe na versão publicada.
   if (import.meta.env.DEV) {
-    const teclas = new URLSearchParams(location.search).get('teclas') ?? '';
-    for (const tecla of teclas.split(',')) {
+    const parametros = new URLSearchParams(location.search);
+    const fase = ids.indexOf(parametros.get('fase') ?? '');
+    if (fase >= 0) abrirFase(fase);
+    for (const tecla of (parametros.get('teclas') ?? '').split(',')) {
       const comando = comandoDaTecla(tecla);
       if (comando !== null) executar(comando);
     }
   }
 
-  const quadro = (agora: number): void => {
+  const desenharFase = (agora: number): void => {
     const t = Math.min(1, (agora - deslize.inicio) / ANIMACAO_MS);
     const posicaoVisual: Posicao = {
       x: deslize.de.x + (estado.jogador.x - deslize.de.x) * t,
@@ -75,14 +115,21 @@ function iniciar(fases: readonly Fase[]): void {
     preencher(ctx, { x: 0, y: 0, w: TELA.w, h: TELA.h }, CORES.fundoTela);
     desenharBarra(ctx, estado);
     desenharMapa(ctx, estado, posicaoVisual);
-    const yLivre = desenharPainel(ctx, estado);
-    desenharDica(ctx, estado, yLivre + 6);
+    const yLivre = desenharPainel(ctx, estado) + 6;
+    // Abaixo do circuito: a tabela do Scanner, se este circuito já foi escaneado; senão, a dica.
+    const foco = circuitoEmFoco(estado);
+    if (foco !== undefined && estado.escaneados.includes(foco.id)) desenharScanner(ctx, estado, foco, yLivre);
+    else desenharDica(ctx, estado, yLivre);
     desenharRodape(ctx);
 
     if (aviso !== null && agora < aviso.ate) desenharAviso(ctx, aviso.texto, aviso.cor);
     if (estado.situacao === 'vitoria') desenharVitoria(ctx, estado, indice === fases.length - 1);
     if (estado.situacao === 'pausado') desenharPausa(ctx);
+  };
 
+  const quadro = (agora: number): void => {
+    if (tela === 'menu') desenharMenu(ctx, fases, progresso, indice);
+    else desenharFase(agora);
     requestAnimationFrame(quadro);
   };
   requestAnimationFrame(quadro);

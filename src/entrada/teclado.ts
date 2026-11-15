@@ -15,12 +15,13 @@ const TECLAS: Readonly<Record<string, Comando>> = {
   arrowright: { tipo: 'mover', direcao: 'direita' },
   d: { tipo: 'mover', direcao: 'direita' },
   e: { tipo: 'interagir' },
+  q: { tipo: 'scanner' },
   r: { tipo: 'reiniciar' },
   escape: { tipo: 'pausar' },
   enter: { tipo: 'confirmar' },
 };
 
-/** Setas/WASD movem; E interage; R reinicia; Esc pausa; Enter confirma. */
+/** Setas/WASD movem; E interage; Q usa o Scanner; R reinicia; Esc pausa; Enter confirma. */
 export function comandoDaTecla(tecla: string): Comando | null {
   return TECLAS[tecla.toLowerCase()] ?? null;
 }
