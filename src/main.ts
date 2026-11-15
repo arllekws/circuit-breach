@@ -58,7 +58,15 @@ function iniciar(fases: readonly Fase[]): void {
     }
     if (novo.evento === 'alerta_estourou') avisar('ALERTA MÁXIMO · seguranças a caminho · fase reiniciada');
     if (novo.evento === 'alarme') avisar('LASER DISPAROU · alarme · fase reiniciada');
-    if (novo.evento === 'erro') avisar('NÃO É EQUIVALENTE · alarme · +1 alerta');
+    if (novo.evento === 'erro') {
+      const motivo = {
+        montagem: 'CIRCUITO NÃO EQUIVALENTE',
+        espelho: 'CABO NÃO EQUIVALENTE · alarme',
+        terminais: 'MARCAÇÃO INCONSISTENTE',
+        prova: 'PASSO INVÁLIDO',
+      }[novo.desafio?.tipo ?? 'montagem'];
+      avisar(`${motivo} · +1 alerta`);
+    }
     if (novo.evento === 'vitoria') {
       progresso = registrarVitoria(progresso, novo.fase.id, novo.estrelas);
       salvarProgresso(window.localStorage, progresso);

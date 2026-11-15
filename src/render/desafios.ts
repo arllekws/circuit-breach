@@ -1,14 +1,23 @@
-import { montarFormula, type Espelho, type EstadoDoDesafio, type Montagem } from '../jogo/desafios';
+import {
+  botoesDeRegra,
+  montarFormula,
+  type Espelho,
+  type EstadoDoDesafio,
+  type Montagem,
+  type Prova,
+  type Terminais,
+} from '../jogo/desafios';
 import type { Estado } from '../jogo/tipos';
 import { avaliar } from '../logica/avaliar';
 import { formatar } from '../logica/formatar';
+import { REGRAS } from '../logica/inferencia';
 import { valoracoes, variaveis } from '../logica/tabelaVerdade';
-import { paraBit, type ConectivoBinario } from '../logica/tipos';
-import { contornar, escrever, linha, preencher, type Ctx } from './desenho';
+import { paraBit, type Bit, type ConectivoBinario } from '../logica/tipos';
+import { contornar, escrever, escreverParagrafo, linha, preencher, type Ctx } from './desenho';
 import { AREA_MAPA, PAINEL, type RegiaoClicavel, type Retangulo } from './layout';
 import { CORES, fonte } from './tema';
 
-// Telas dos desafios do Firewall. Cada função desenha o desafio aberto e devolve as regiões
+// Telas dos desafios do Firewall e do Núcleo. Cada função desenha o desafio aberto e devolve as regiões
 // clicáveis (o mouse só transforma o clique na ação da região; a regra continua em jogo/).
 
 /** A tela do desafio ocupa o lugar do mapa e do painel. */
@@ -175,6 +184,154 @@ function desenharEspelho(
   return regioes;
 }
 
+function desenharTerminais(
+  ctx: Ctx,
+  definicao: Terminais,
+  aberto: Extract<EstadoDoDesafio, { tipo: 'terminais' }>,
+): RegiaoClicavel[] {
+  const regioes: RegiaoClicavel[] = [];
+  moldura(
+    ctx,
+    'TERMINAIS DE SEGURANÇA',
+    'Confiável sempre diz a verdade; comprometido sempre mente. Se A diz φ, então vale A ↔ φ.',
+  );
+  const n = definicao.terminais.length;
+  const vao = 12;
+  const largura = (AREA.w - MARGEM * 2 - (n - 1) * vao) / n;
+  definicao.terminais.forEach((terminal, i) => {
+    const r: Retangulo = { x: AREA.x + MARGEM + i * (largura + vao), y: AREA.y + 68, w: largura, h: 196 };
+    const noCursor = i === aberto.cursor;
+    caixa(ctx, r, noCursor);
+    regioes.push({ r, acao: { tipo: 'selecionar', indice: i } });
+    const x = r.x + 10;
+    escrever(ctx, `${noCursor ? '> ' : ''}TERMINAL ${terminal.nome}`, x, r.y + 16, {
+      negrito: true,
+      cor: noCursor ? CORES.jogador : CORES.texto,
+    });
+    const yDepoisDaFala = escreverParagrafo(ctx, `"${terminal.fala}"`, x, r.y + 40, r.w - 20, {});
+    escrever(ctx, 'Tradução:', x, yDepoisDaFala + 8, { cor: CORES.textoSecundario });
+    escrever(ctx, formatar(terminal.formula), x, yDepoisDaFala + 26, { tamanho: 14, negrito: true });
+
+    // Marcação: 1 = confiável (ciano preenchido), 0 = comprometido (contorno). "[x]" mostra a escolha.
+    const marca = aberto.marcas[i] ?? null;
+    const opcoes: [Bit, string][] = [[1, 'CONFIÁVEL · 1'], [0, 'COMPROMETIDO · 0']];
+    opcoes.forEach(([valor, rotulo], k) => {
+      const botao: Retangulo = { x, y: r.y + r.h - 62 + k * 28, w: r.w - 20, h: 24 };
+      const escolhido = marca === valor;
+      if (escolhido && valor === 1) {
+        preencher(ctx, botao, CORES.um);
+      } else {
+        preencher(ctx, botao, CORES.painel);
+        contornar(ctx, botao, escolhido ? CORES.texto : CORES.zero, escolhido ? 2 : 1);
+      }
+      escrever(ctx, `${escolhido ? '[x]' : '[ ]'} ${rotulo}`, botao.x + 8, botao.y + botao.h / 2 + 0.5, {
+        negrito: escolhido,
+        cor: escolhido && valor === 1 ? CORES.fundoTela : escolhido ? CORES.texto : CORES.textoSecundario,
+      });
+      regioes.push({ r: botao, acao: { tipo: 'marcar', indice: i, valor } });
+    });
+  });
+
+  const completo = aberto.marcas.every((marca) => marca !== null);
+  const botao: Retangulo = { x: AREA.x + AREA.w / 2 - 100, y: AREA.y + 274, w: 200, h: 28 };
+  preencher(ctx, botao, CORES.fundoMapa);
+  contornar(ctx, botao, completo ? CORES.texto : CORES.zero, completo ? 2 : 1);
+  escrever(ctx, 'CONFERIR MARCAÇÃO', botao.x + botao.w / 2, botao.y + botao.h / 2 + 0.5, {
+    alinhar: 'center',
+    negrito: true,
+    cor: completo ? CORES.texto : CORES.textoSecundario,
+  });
+  regioes.push({ r: botao, acao: { tipo: 'confirmar' } });
+
+  rodapeDoDesafio(ctx, '←→ terminal · ↑ confiável · ↓ comprometido · Enter confere · Esc volta ao mapa');
+  // Os botões ficam dentro dos cartões: invertendo a lista, o clique acha primeiro o botão.
+  return regioes.reverse();
+}
+
+const LINHAS_VISIVEIS = 9;
+
+function desenharProva(
+  ctx: Ctx,
+  definicao: Prova,
+  aberto: Extract<EstadoDoDesafio, { tipo: 'prova' }>,
+): RegiaoClicavel[] {
+  const regioes: RegiaoClicavel[] = [];
+  const pedida = definicao.rodadas[aberto.rodada];
+  if (pedida === undefined) return regioes;
+  moldura(
+    ctx,
+    `NÚCLEO CENTRAL · prova ${aberto.rodada + 1} de ${definicao.rodadas.length}`,
+    'Marque linhas e aplique uma regra de inferência. Passo inválido é recusado e soma alerta.',
+  );
+  // A conclusão pedida, em verde (o resultado certo).
+  escrever(ctx, `META: ${formatar(pedida.meta)}`, AREA.x + AREA.w - MARGEM, AREA.y + 20, {
+    cor: CORES.sucesso,
+    tamanho: 14,
+    negrito: true,
+    alinhar: 'right',
+  });
+
+  // --- linhas da prova, à esquerda ---
+  const x = AREA.x + MARGEM;
+  const larguraDasLinhas = 404;
+  const primeira = Math.max(0, Math.min(aberto.cursor - (LINHAS_VISIVEIS - 1), aberto.linhas.length - LINHAS_VISIVEIS));
+  aberto.linhas.slice(primeira, primeira + LINHAS_VISIVEIS).forEach((linhaDaProva, k) => {
+    const i = primeira + k;
+    const r: Retangulo = { x, y: AREA.y + 66 + k * 23, w: larguraDasLinhas, h: 21 };
+    const meio = r.y + r.h / 2 + 0.5;
+    const marcada = aberto.selecionadas.includes(i);
+    preencher(ctx, r, CORES.fundoMapa);
+    if (marcada) contornar(ctx, r, CORES.jogador, 2);
+    if (i === aberto.cursor) escrever(ctx, '>', r.x + 4, meio, { cor: CORES.jogador, negrito: true });
+    escrever(ctx, `${marcada ? '[x]' : '[ ]'} ${i + 1}.`, r.x + 16, meio, {
+      cor: marcada ? CORES.jogador : CORES.textoSecundario,
+      negrito: marcada,
+    });
+    const textoDaFormula = formatar(linhaDaProva.formula);
+    escrever(ctx, textoDaFormula, r.x + 64, meio, { negrito: true });
+    // À direita da fórmula: o log (premissa) ou a regra que gerou a linha.
+    const premissa = linhaDaProva.justificativa === 'premissa' ? pedida.premissas[i] : undefined;
+    const nota = premissa !== undefined ? `log: ${premissa.log}` : linhaDaProva.justificativa;
+    ctx.font = fonte(11, true);
+    const xNota = r.x + 64 + ctx.measureText(textoDaFormula).width + 12;
+    ctx.font = fonte();
+    let cortada = nota;
+    while (cortada.length > 4 && ctx.measureText(cortada).width > r.x + r.w - xNota - 4) {
+      cortada = `${cortada.slice(0, -2)}…`;
+    }
+    escrever(ctx, cortada, xNota, meio, { cor: CORES.textoSecundario });
+    regioes.push({ r, acao: { tipo: 'selecionar', indice: i } });
+  });
+
+  // --- regras, à direita ---
+  const botoes = botoesDeRegra(pedida);
+  const xRegras = x + larguraDasLinhas + 16;
+  const larguraDoBotao = (AREA.x + AREA.w - MARGEM - xRegras - 8) / 2;
+  botoes.forEach((botao, i) => {
+    const r: Retangulo = {
+      x: xRegras + (i % 2) * (larguraDoBotao + 8),
+      y: AREA.y + 66 + Math.floor(i / 2) * 30,
+      w: larguraDoBotao,
+      h: 24,
+    };
+    caixa(ctx, r, i === aberto.botao);
+    escrever(ctx, botao.rotulo, r.x + r.w / 2, r.y + r.h / 2 + 0.5, { alinhar: 'center', negrito: true });
+    regioes.push({ r, acao: { tipo: 'aplicarRegra', botao: i } });
+  });
+  const sobOCursor = botoes[aberto.botao];
+  if (sobOCursor !== undefined) {
+    const yDescricao = AREA.y + 66 + Math.ceil(botoes.length / 2) * 30 + 10;
+    escrever(ctx, REGRAS[sobOCursor.regra].nome, xRegras, yDescricao, { negrito: true });
+    escrever(ctx, REGRAS[sobOCursor.regra].esquema, xRegras, yDescricao + 16, { cor: CORES.textoSecundario });
+  }
+
+  if (aberto.recusa !== null) {
+    escrever(ctx, aberto.recusa, x, AREA.y + AREA.h - 42, { cor: CORES.perigo });
+  }
+  rodapeDoDesafio(ctx, '↑↓ linha · E marca · ←→ regra · Enter aplica · Esc volta ao mapa');
+  return regioes;
+}
+
 /** Desenha o desafio aberto (se houver) e devolve suas regiões clicáveis. */
 export function desenharDesafio(ctx: Ctx, estado: Estado): RegiaoClicavel[] {
   const aberto = estado.desafio;
@@ -182,5 +339,7 @@ export function desenharDesafio(ctx: Ctx, estado: Estado): RegiaoClicavel[] {
   if (aberto === null || definicao === undefined) return [];
   if (aberto.tipo === 'montagem' && definicao.tipo === 'montagem') return desenharMontagem(ctx, definicao, aberto);
   if (aberto.tipo === 'espelho' && definicao.tipo === 'espelho') return desenharEspelho(ctx, definicao, aberto);
+  if (aberto.tipo === 'terminais' && definicao.tipo === 'terminais') return desenharTerminais(ctx, definicao, aberto);
+  if (aberto.tipo === 'prova' && definicao.tipo === 'prova') return desenharProva(ctx, definicao, aberto);
   return [];
 }

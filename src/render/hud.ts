@@ -1,7 +1,7 @@
 import { estrelasPara, limiteAlerta } from '../jogo/regras';
 import type { Estado } from '../jogo/tipos';
 import { contornar, escrever, estrela, preencher, type Ctx } from './desenho';
-import { AREA_MAPA, BARRA, RODAPE, TELA, type Retangulo } from './layout';
+import { AREA_MAPA, BARRA, PAINEL, RODAPE, TELA, type Retangulo } from './layout';
 import { CORES } from './tema';
 
 /** Barra superior: nome da fase, nível de alerta "n / limite" e as 3 estrelas. */
@@ -46,11 +46,13 @@ export function desenharRodape(ctx: Ctx): void {
 
 /**
  * Aviso curto (ex.: alerta estourado). Aparece e some; não pisca.
- * Fica no topo do mapa ou, com um desafio aberto, embaixo (para não cobrir o título).
+ * Fica no topo do mapa ou, com um desafio aberto, na linha de rodapé do desafio
+ * (cobre a dica de teclas por um instante, e nada mais).
  */
-export function desenharAviso(ctx: Ctx, texto: string, cor: string, embaixo = false): void {
-  const y = embaixo ? AREA_MAPA.y + AREA_MAPA.h - 60 : AREA_MAPA.y + 8;
-  const r: Retangulo = { x: AREA_MAPA.x + 8, y, w: AREA_MAPA.w - 16, h: 24 };
+export function desenharAviso(ctx: Ctx, texto: string, cor: string, noRodapeDoDesafio = false): void {
+  const r: Retangulo = noRodapeDoDesafio
+    ? { x: AREA_MAPA.x + 8, y: AREA_MAPA.y + AREA_MAPA.h - 27, w: PAINEL.x + PAINEL.w - AREA_MAPA.x - 16, h: 24 }
+    : { x: AREA_MAPA.x + 8, y: AREA_MAPA.y + 8, w: AREA_MAPA.w - 16, h: 24 };
   preencher(ctx, r, CORES.painel);
   contornar(ctx, r, cor, 1);
   escrever(ctx, texto, r.x + r.w / 2, r.y + r.h / 2, { cor, alinhar: 'center', negrito: true });
