@@ -1,0 +1,25 @@
+{
+  "id": "1-1",
+  "setor": "Acesso",
+  "titulo": "Porta de entrada",
+  "dica": "A porta abre quando o circuito dá 1. NOT inverte a entrada; AND só dá 1 com as duas entradas em 1.",
+  "mapa": [
+    "#############",
+    "#...........#",
+    "#...........#",
+    "#.@.........#",
+    "#...........#",
+    "######.######",
+    "#...........#",
+    "#.........X.#",
+    "#############"
+  ],
+  "entradas": { "P": 1, "Q": 0 },
+  "interruptores": [
+    { "nome": "P", "em": [4, 1] },
+    { "nome": "Q", "em": [8, 1] }
+  ],
+  "portas": [{ "em": [6, 5], "formula": "NOT P AND Q" }],
+  "lasers": [],
+  "folga_alerta": 3
+}
