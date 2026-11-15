@@ -1,0 +1,81 @@
+{
+  "id": "4-1",
+  "setor": "Firewall",
+  "titulo": "Montagem de circuito",
+  "dica": "Um painel pode estar sempre ativo (tautologia) ou corrompido (contradição): nesses casos, nenhum interruptor muda a saída. No terminal F, monte um circuito com a mesma tabela-verdade do alvo.",
+  "mapa": [
+    "#############",
+    "#.....#.....#",
+    "#.@.........#",
+    "#.....#.....#",
+    "#.....#.....#",
+    "###.#####.###",
+    "#...........#",
+    "#.........X.#",
+    "#############"
+  ],
+  "entradas": {
+    "P": 0,
+    "Q": 0
+  },
+  "interruptores": [
+    {
+      "nome": "P",
+      "em": [
+        4,
+        1
+      ]
+    },
+    {
+      "nome": "Q",
+      "em": [
+        1,
+        4
+      ]
+    }
+  ],
+  "portas": [
+    {
+      "em": [
+        6,
+        2
+      ],
+      "formula": "P OR NOT P"
+    },
+    {
+      "em": [
+        3,
+        5
+      ],
+      "formula": "Q AND NOT Q",
+      "opcional": true
+    },
+    {
+      "em": [
+        9,
+        5
+      ],
+      "formula": "F"
+    }
+  ],
+  "lasers": [],
+  "desafios": [
+    {
+      "nome": "F",
+      "em": [
+        10,
+        1
+      ],
+      "tipo": "montagem",
+      "alvo": "A XOR B",
+      "descricao": "1 só quando A e B são diferentes",
+      "molde": "(A ?1 B) ?2 NOT (A ?3 B)",
+      "opcoes": [
+        "AND",
+        "OR",
+        "XOR"
+      ]
+    }
+  ],
+  "folga_alerta": 4
+}

@@ -1,0 +1,69 @@
+{
+  "id": "4-2",
+  "setor": "Firewall",
+  "titulo": "Firewall espelhado",
+  "dica": "Só o cabo logicamente equivalente (mesma tabela-verdade) contorna o firewall. Lembre de De Morgan, da dupla negação e de P → Q ≡ ¬P ∨ Q.",
+  "mapa": [
+    "#############",
+    "#...........#",
+    "#.@.........#",
+    "#...........#",
+    "#########.###",
+    "#...........#",
+    "#.........X.#",
+    "#############"
+  ],
+  "entradas": {},
+  "interruptores": [],
+  "portas": [
+    {
+      "em": [
+        9,
+        4
+      ],
+      "formula": "F"
+    }
+  ],
+  "lasers": [],
+  "desafios": [
+    {
+      "nome": "F",
+      "em": [
+        6,
+        1
+      ],
+      "tipo": "espelho",
+      "rodadas": [
+        {
+          "original": "NOT (P AND Q)",
+          "cabos": [
+            "NOT P AND NOT Q",
+            "NOT P OR NOT Q"
+          ]
+        },
+        {
+          "original": "NOT NOT P",
+          "cabos": [
+            "P",
+            "NOT P"
+          ]
+        },
+        {
+          "original": "P -> Q",
+          "cabos": [
+            "P OR NOT Q",
+            "NOT P OR Q"
+          ]
+        },
+        {
+          "original": "NOT (P OR Q)",
+          "cabos": [
+            "NOT P AND NOT Q",
+            "NOT P OR NOT Q"
+          ]
+        }
+      ]
+    }
+  ],
+  "folga_alerta": 3
+}

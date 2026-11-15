@@ -21,6 +21,8 @@ const MINIMO_ESPERADO: Record<string, number> = {
   '2-2': 1,
   '3-1': 1,
   '3-2': 3,
+  '4-1': 0,
+  '4-2': 0,
 };
 
 describe('todas as fases', () => {
@@ -46,6 +48,7 @@ describe('todas as fases', () => {
       expect(vitoria).not.toBeNull();
       expect(vitoria?.estrelas).toBe(3);
       expect(vitoria?.trocas).toBe(fase.minimo);
+      expect(vitoria?.erros).toBe(0);
       expect(vitoria?.alerta).toBeLessThanOrEqual(limiteAlerta(fase));
     });
 

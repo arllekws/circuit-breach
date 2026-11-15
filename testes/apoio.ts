@@ -17,13 +17,15 @@ const COMANDOS: Readonly<Record<string, Acao>> = {
   '>': { tipo: 'mover', direcao: 'direita' },
   e: { tipo: 'interagir' },
   q: { tipo: 'scanner' },
+  c: { tipo: 'confirmar' },
   r: { tipo: 'reiniciar' },
   p: { tipo: 'pausar' },
 };
 
 /**
  * Executa uma sequência de comandos: ^ v < > movem, "e" interage, "q" usa o Scanner,
- * "r" reinicia, "p" pausa. Espaços são ignorados (servem para separar etapas).
+ * "c" confirma (Enter),
+ * "r" reinicia, "p" pausa (Esc). Espaços são ignorados (servem para separar etapas).
  */
 export function jogar(estado: Estado, comandos: string): Estado {
   let atual = estado;
@@ -33,6 +35,44 @@ export function jogar(estado: Estado, comandos: string): Estado {
     atual = aplicar(atual, acao);
   }
   return atual;
+}
+
+/**
+ * Resolve o desafio aberto sem cometer nenhum erro, por busca em largura sobre as ações de
+ * desafio (usando só `aplicar`). Devolve o estado logo após a solução, ou null se não há.
+ */
+export function resolverDesafio(aberto: Estado): Estado | null {
+  const terminal = aberto.fase.desafios.find((t) => t.nome === aberto.desafio?.nome);
+  if (terminal === undefined) return null;
+  const definicao = terminal.desafio;
+  const acoes: Acao[] = [];
+  if (definicao.tipo === 'montagem') {
+    for (let espaco = 0; espaco < definicao.espacos; espaco++) {
+      for (const porta of definicao.opcoes) acoes.push({ tipo: 'escolherPorta', espaco, porta });
+    }
+    acoes.push({ tipo: 'confirmar' });
+  } else {
+    const maximo = Math.max(...definicao.rodadas.map((rodada) => rodada.cabos.length));
+    for (let indice = 0; indice < maximo; indice++) acoes.push({ tipo: 'escolherCabo', indice });
+  }
+  const vistos = new Set([JSON.stringify(aberto.desafio)]);
+  let fronteira = [aberto];
+  while (fronteira.length > 0) {
+    const proxima: Estado[] = [];
+    for (const estado of fronteira) {
+      for (const acao of acoes) {
+        const novo = aplicar(estado, acao);
+        if (novo.evento === 'desafio_resolvido') return novo;
+        if (novo.evento !== 'desafio_escolha' && novo.evento !== 'desafio_avancou') continue;
+        const chave = JSON.stringify(novo.desafio);
+        if (vistos.has(chave)) continue;
+        vistos.add(chave);
+        proxima.push(novo);
+      }
+    }
+    fronteira = proxima;
+  }
+  return null;
 }
 
 /**
@@ -58,7 +98,12 @@ export function resolver(fase: Fase, maximoDeTrocas: number = fase.minimo): Esta
     const proxima: Estado[] = [];
     for (const estado of fronteira) {
       for (const acao of acoes) {
-        const novo = aplicar(estado, acao);
+        let novo = aplicar(estado, acao);
+        if (novo.evento === 'desafio_aberto') {
+          const resolvido = resolverDesafio(novo);
+          if (resolvido === null) continue;
+          novo = { ...resolvido, evento: 'troca' }; // segue a busca a partir do mapa
+        }
         if (novo.situacao === 'vitoria') return novo;
         // Reinícios (alarme, alerta) e passos bloqueados não levam a lugar nenhum.
         if (novo.evento !== 'andou' && novo.evento !== 'troca') continue;
