@@ -231,3 +231,10 @@ navegador (checando painel em tempo real, Scanner, alerta, estrelas) · a partir
 - Fase 2-1: mínimo **0 trocas** (a solução de 3 estrelas usa só a placa); usar o interruptor Q dá 2 estrelas.
 - Teste `todasAsFases` usa um **solucionador** (busca em largura sobre `aplicar`) que prova que cada fase é zerável no mapa com o mínimo de trocas — no lugar de sequências de teclas escritas à mão.
 - Sem extensão do navegador disponível, a conferência visual é feita por capturas de tela do Chrome sem janela, usando `?fase=` e `?teclas=` (só em desenvolvimento).
+- **M4 concluído** (Firewall): desafios são terminais no mapa cuja proposição (ex.: `F`) vira 1 ao resolver, como previsto em D1.
+- Montagem por **clique** (escolhe o espaço, escolhe a porta) e também por teclado (setas + Enter). Arrastar e soltar fica fora, conforme a ordem de corte.
+- No Firewall de montagem as proposições são `A` e `B` (não `P`, `Q`) para não confundir com os interruptores do mapa.
+- Firewall espelhado tem **4 rodadas** (as duas leis de De Morgan, dupla negação, P → Q ≡ ¬P ∨ Q). Cabo errado = alarme: +1 alerta, 1 erro e volta à rodada 1 (não reinicia a fase inteira, para as estrelas por erro fazerem sentido).
+- Porta com `"opcional": true` (painel corrompido) fica fora do cálculo de solução.
+- Estrelas: erros em desafios contam como trocas extras (`estrelasPara(trocas, minimo, erros)`), o que implementa D4.
+- `entrada/mouse.ts` importa só o tipo `RegiaoClicavel` e o tamanho da tela de `render/layout.ts`.

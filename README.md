@@ -16,7 +16,7 @@ npm run tipos    # checagem de tipos (tsc --noEmit)
 npm run build    # gera dist/ para publicação
 ```
 
-Controles: setas/WASD movem · E interage · Q Scanner · R reinicia · Esc pausa.
+Controles: setas/WASD movem · E interage · Q Scanner · R reinicia · Esc pausa · mouse (ou setas + Enter) nos desafios do Firewall.
 
 ## Onde está cada conceito de lógica
 
@@ -37,6 +37,8 @@ Controles: setas/WASD movem · E interage · Q Scanner · R reinicia · Esc paus
 | Laser instantâneo (restrição: circuito deve dar 0) | `src/jogo/aplicar.ts` → `interagir`; `src/jogo/regras.ts` → `algumLaserLigado` | `testes/jogo/setores123.test.ts` ("ligar R antes de desligar Q") |
 | Placa de pressão como proposição | `src/jogo/regras.ts` → `valoracaoComPlacas` | `testes/jogo/setores123.test.ts` (fase 2-1) |
 | Scanner (tabela-verdade com linha atual e linha-alvo) | `src/jogo/scanner.ts` → `tabelaDoScanner` | `testes/jogo/scannerProgresso.test.ts` |
+| Equivalência na jogabilidade (Firewall de montagem e espelhado) | `src/jogo/desafios.ts` → `aplicarNoDesafio`, `montarFormula` | `testes/jogo/firewall.test.ts` ("aceita QUALQUER circuito com a mesma tabela-verdade") |
+| Tautologia e contradição na jogabilidade (painel sempre ativo / corrompido) | `src/fases/dados/4-1.json`; `src/jogo/scanner.ts` → `classificacao` | `testes/jogo/firewall.test.ts` (fase 4-1) |
 | Alerta e estrelas pelo mínimo de trocas | `src/jogo/regras.ts` → `limiteAlerta`, `estrelasPara` | `testes/jogo/aplicar.test.ts` |
 
 O plano do projeto está em [`docs/PLANO.md`](docs/PLANO.md) e o relatório de mecânica em `docs/relatorio-mecanica.pdf`.
