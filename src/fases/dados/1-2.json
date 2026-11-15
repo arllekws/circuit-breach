@@ -1,0 +1,25 @@
+{
+  "id": "1-2",
+  "setor": "Acesso",
+  "titulo": "Três entradas, zero folga",
+  "dica": "Três entradas e nenhuma folga: o alerta só permite o mínimo de trocas. Pense antes de tocar em qualquer interruptor.",
+  "mapa": [
+    "#############",
+    "#...........#",
+    "#.@.........#",
+    "#...........#",
+    "#########.###",
+    "#...........#",
+    "#.........X.#",
+    "#############"
+  ],
+  "entradas": { "P": 0, "Q": 0, "R": 1 },
+  "interruptores": [
+    { "nome": "P", "em": [4, 1] },
+    { "nome": "Q", "em": [7, 1] },
+    { "nome": "R", "em": [10, 1] }
+  ],
+  "portas": [{ "em": [9, 4], "formula": "P AND Q AND NOT R" }],
+  "lasers": [],
+  "folga_alerta": 0
+}

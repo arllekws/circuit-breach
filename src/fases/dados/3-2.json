@@ -1,0 +1,25 @@
+{
+  "id": "3-2",
+  "setor": "Protocolos",
+  "titulo": "A ordem importa",
+  "dica": "A porta precisa dar 1 e o laser precisa continuar em 0 — ao mesmo tempo e durante todo o caminho. A ordem das trocas importa.",
+  "mapa": [
+    "#############",
+    "#...........#",
+    "#.@.........#",
+    "#...........#",
+    "#########.###",
+    "#...........#",
+    "#.........X.#",
+    "#############"
+  ],
+  "entradas": { "P": 1, "Q": 1, "R": 0 },
+  "interruptores": [
+    { "nome": "P", "em": [4, 1] },
+    { "nome": "Q", "em": [7, 1] },
+    { "nome": "R", "em": [10, 1] }
+  ],
+  "portas": [{ "em": [9, 4], "formula": "(P -> Q) AND R" }],
+  "lasers": [{ "em": [1, 3], "formula": "Q AND R" }],
+  "folga_alerta": 3
+}

@@ -1,0 +1,29 @@
+{
+  "id": "3-1",
+  "setor": "Protocolos",
+  "titulo": "Se… então",
+  "dica": "P → Q só dá 0 quando P é 1 e Q é 0. P ↔ Q dá 1 quando os dois lados são iguais. As duas portas precisam abrir ao mesmo tempo.",
+  "mapa": [
+    "#############",
+    "#...........#",
+    "#.@.........#",
+    "####.########",
+    "#...........#",
+    "#...........#",
+    "########.####",
+    "#.........X.#",
+    "#############"
+  ],
+  "entradas": { "P": 1, "Q": 0, "R": 1 },
+  "interruptores": [
+    { "nome": "P", "em": [5, 1] },
+    { "nome": "Q", "em": [8, 1] },
+    { "nome": "R", "em": [11, 1] }
+  ],
+  "portas": [
+    { "em": [4, 3], "formula": "P -> Q" },
+    { "em": [8, 6], "formula": "Q <-> R" }
+  ],
+  "lasers": [],
+  "folga_alerta": 2
+}

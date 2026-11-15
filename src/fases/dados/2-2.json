@@ -1,0 +1,25 @@
+{
+  "id": "2-2",
+  "setor": "Rede",
+  "titulo": "Entradas compartilhadas",
+  "dica": "A ponte e o laser dividem a entrada Q. O laser dispara no instante em que o circuito dele dá 1: leia os dois circuitos antes de trocar qualquer coisa.",
+  "mapa": [
+    "#############",
+    "#...........#",
+    "#.@.........#",
+    "#...........#",
+    "#####.#######",
+    "#...........#",
+    "#.........X.#",
+    "#############"
+  ],
+  "entradas": { "P": 0, "Q": 0, "R": 0 },
+  "interruptores": [
+    { "nome": "P", "em": [4, 1] },
+    { "nome": "Q", "em": [7, 1] },
+    { "nome": "R", "em": [10, 1] }
+  ],
+  "portas": [{ "em": [5, 4], "formula": "Q OR R", "tipo": "ponte" }],
+  "lasers": [{ "em": [1, 3], "formula": "P XOR Q" }],
+  "folga_alerta": 2
+}
