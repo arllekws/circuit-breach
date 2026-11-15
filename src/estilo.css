@@ -1,0 +1,17 @@
+/* Só layout: as cores vêm de src/render/tema.ts. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+canvas {
+  display: block;
+}
