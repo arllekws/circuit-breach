@@ -23,6 +23,8 @@ const MINIMO_ESPERADO: Record<string, number> = {
   '3-2': 3,
   '4-1': 0,
   '4-2': 0,
+  '5-1': 0,
+  '5-2': 0,
 };
 
 describe('todas as fases', () => {

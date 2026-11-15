@@ -1,0 +1,76 @@
+{
+  "id": "5-1",
+  "setor": "Núcleo",
+  "titulo": "Terminais suspeitos",
+  "dica": "Terminal confiável sempre diz a verdade; comprometido sempre mente. Se A diz φ, vale A ↔ φ. Marque cada terminal de modo que todas as fórmulas fiquem verdadeiras ao mesmo tempo.",
+  "mapa": [
+    "#############",
+    "#...........#",
+    "#.@.........#",
+    "#...........#",
+    "#########.###",
+    "#...........#",
+    "#.........X.#",
+    "#############"
+  ],
+  "entradas": {},
+  "interruptores": [],
+  "portas": [
+    {
+      "em": [
+        9,
+        4
+      ],
+      "formula": "T AND U"
+    }
+  ],
+  "lasers": [],
+  "desafios": [
+    {
+      "nome": "T",
+      "em": [
+        5,
+        1
+      ],
+      "tipo": "terminais",
+      "terminais": [
+        {
+          "nome": "A",
+          "fala": "O terminal B está comprometido.",
+          "formula": "A <-> NOT B"
+        },
+        {
+          "nome": "B",
+          "fala": "Nós dois somos do mesmo tipo.",
+          "formula": "B <-> (A <-> B)"
+        }
+      ]
+    },
+    {
+      "nome": "U",
+      "em": [
+        9,
+        1
+      ],
+      "tipo": "terminais",
+      "terminais": [
+        {
+          "nome": "A",
+          "fala": "O terminal B está comprometido.",
+          "formula": "A <-> NOT B"
+        },
+        {
+          "nome": "B",
+          "fala": "O terminal C está comprometido.",
+          "formula": "B <-> NOT C"
+        },
+        {
+          "nome": "C",
+          "fala": "A e B estão comprometidos.",
+          "formula": "C <-> (NOT A AND NOT B)"
+        }
+      ]
+    }
+  ],
+  "folga_alerta": 3
+}

@@ -1,0 +1,101 @@
+{
+  "id": "5-2",
+  "setor": "Núcleo",
+  "titulo": "Núcleo Central",
+  "dica": "Os logs do Núcleo são premissas. Marque as linhas e aplique uma regra de inferência: o jogo confere se as árvores casam com o esquema da regra. Passo inválido é recusado e soma alerta.",
+  "mapa": [
+    "#############",
+    "#...........#",
+    "#.@.........#",
+    "#...........#",
+    "#########.###",
+    "#...........#",
+    "#.........X.#",
+    "#############"
+  ],
+  "entradas": {},
+  "interruptores": [],
+  "portas": [
+    {
+      "em": [
+        9,
+        4
+      ],
+      "formula": "N"
+    }
+  ],
+  "lasers": [],
+  "desafios": [
+    {
+      "nome": "N",
+      "em": [
+        6,
+        1
+      ],
+      "tipo": "prova",
+      "rodadas": [
+        {
+          "premissas": [
+            {
+              "formula": "P -> Q",
+              "log": "Se o backup está ativo, o firewall reinicia."
+            },
+            {
+              "formula": "Q -> R",
+              "log": "Se o firewall reinicia, o alarme dispara."
+            },
+            {
+              "formula": "NOT R",
+              "log": "O alarme não disparou."
+            }
+          ],
+          "meta": "NOT P",
+          "adicoes": [
+            "S"
+          ]
+        },
+        {
+          "premissas": [
+            {
+              "formula": "P AND Q",
+              "log": "O backup está ativo e a rede está isolada."
+            },
+            {
+              "formula": "P -> R OR S",
+              "log": "Se o backup está ativo, o alarme dispara ou a porta destrava."
+            },
+            {
+              "formula": "NOT R",
+              "log": "O alarme não disparou."
+            }
+          ],
+          "meta": "S",
+          "adicoes": [
+            "Q"
+          ]
+        },
+        {
+          "premissas": [
+            {
+              "formula": "P",
+              "log": "O Núcleo está em manutenção."
+            },
+            {
+              "formula": "Q",
+              "log": "O hacker tem a senha."
+            },
+            {
+              "formula": "P AND Q -> R",
+              "log": "Em manutenção e com a senha, o Núcleo desliga."
+            }
+          ],
+          "meta": "R OR S",
+          "adicoes": [
+            "S"
+          ]
+        }
+      ]
+    }
+  ],
+  "folga_alerta": 4
+}

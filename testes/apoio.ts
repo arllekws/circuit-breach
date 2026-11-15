@@ -37,6 +37,28 @@ export function jogar(estado: Estado, comandos: string): Estado {
   return atual;
 }
 
+const marcarLinhas = (...indices: number[]): Acao[] => indices.map((indice) => ({ tipo: 'selecionar', indice }));
+const regra = (botao: number): Acao => ({ tipo: 'aplicarRegra', botao });
+/** Botões de regra, na ordem de `botoesDeRegra`. */
+export const BOTAO = { MP: 0, MT: 1, SH: 2, SD: 3, SIMP_ESQ: 4, SIMP_DIR: 5, CONJ: 6, AD: 7 } as const;
+
+/** Provas completas (sem erros) de cada desafio de prova, por "fase:terminal". Linhas contam de 0. */
+export const ROTEIROS_DE_PROVA: Readonly<Record<string, Acao[]>> = {
+  '5-2:N': [
+    // Prova 1 — P → Q, Q → R, ¬R ⊢ ¬P
+    ...marcarLinhas(0, 1), regra(BOTAO.SH), //   4. P → R      SH (1, 2)
+    ...marcarLinhas(3, 2), regra(BOTAO.MT), //   5. ¬P         MT (4, 3)
+    // Prova 2 — P ∧ Q, P → R ∨ S, ¬R ⊢ S
+    ...marcarLinhas(0), regra(BOTAO.SIMP_ESQ), // 4. P         SIMP (1)
+    ...marcarLinhas(1, 3), regra(BOTAO.MP), //    5. R ∨ S     MP (2, 4)
+    ...marcarLinhas(4, 2), regra(BOTAO.SD), //    6. S         SD (5, 3)
+    // Prova 3 — P, Q, P ∧ Q → R ⊢ R ∨ S
+    ...marcarLinhas(0, 1), regra(BOTAO.CONJ), //  4. P ∧ Q     CONJ (1, 2)
+    ...marcarLinhas(2, 3), regra(BOTAO.MP), //    5. R         MP (3, 4)
+    ...marcarLinhas(4), regra(BOTAO.AD), //       6. R ∨ S     AD (5)
+  ],
+};
+
 /**
  * Resolve o desafio aberto sem cometer nenhum erro, por busca em largura sobre as ações de
  * desafio (usando só `aplicar`). Devolve o estado logo após a solução, ou null se não há.
@@ -51,9 +73,19 @@ export function resolverDesafio(aberto: Estado): Estado | null {
       for (const porta of definicao.opcoes) acoes.push({ tipo: 'escolherPorta', espaco, porta });
     }
     acoes.push({ tipo: 'confirmar' });
-  } else {
+  } else if (definicao.tipo === 'espelho') {
     const maximo = Math.max(...definicao.rodadas.map((rodada) => rodada.cabos.length));
     for (let indice = 0; indice < maximo; indice++) acoes.push({ tipo: 'escolherCabo', indice });
+  } else if (definicao.tipo === 'terminais') {
+    definicao.terminais.forEach((_, indice) => {
+      acoes.push({ tipo: 'marcar', indice, valor: 0 }, { tipo: 'marcar', indice, valor: 1 });
+    });
+    acoes.push({ tipo: 'confirmar' });
+  } else {
+    // Provas: o espaço de busca é grande demais; usa-se a prova escrita em ROTEIROS_DE_PROVA.
+    const roteiro = ROTEIROS_DE_PROVA[`${aberto.fase.id}:${terminal.nome}`] ?? [];
+    const fim = roteiro.reduce(aplicar, aberto);
+    return fim.evento === 'desafio_resolvido' && fim.erros === aberto.erros ? fim : null;
   }
   const vistos = new Set([JSON.stringify(aberto.desafio)]);
   let fronteira = [aberto];
