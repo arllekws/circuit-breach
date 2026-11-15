@@ -1,4 +1,4 @@
-import type { ConectivoBinario, Formula, Valoracao } from '../logica/tipos';
+import type { Bit, ConectivoBinario, Formula, Valoracao } from '../logica/tipos';
 import type { DefinicaoDoDesafio, EstadoDoDesafio } from './desafios';
 
 // Camada de jogo: estado + funções puras. Conhece logica/, não conhece DOM nem Canvas.
@@ -127,4 +127,6 @@ export type Acao =
   | { readonly tipo: 'confirmar' }
   | { readonly tipo: 'selecionar'; readonly indice: number }
   | { readonly tipo: 'escolherPorta'; readonly espaco: number; readonly porta: ConectivoBinario }
-  | { readonly tipo: 'escolherCabo'; readonly indice: number };
+  | { readonly tipo: 'escolherCabo'; readonly indice: number }
+  | { readonly tipo: 'marcar'; readonly indice: number; readonly valor: Bit }
+  | { readonly tipo: 'aplicarRegra'; readonly botao: number };
