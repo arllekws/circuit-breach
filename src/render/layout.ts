@@ -1,4 +1,4 @@
-import type { Fase, Posicao } from '../jogo/tipos';
+import type { Acao, Fase, Posicao } from '../jogo/tipos';
 import { CELULA } from './tema';
 
 export interface Retangulo {
@@ -6,6 +6,12 @@ export interface Retangulo {
   readonly y: number;
   readonly w: number;
   readonly h: number;
+}
+
+/** Retângulo da tela que responde ao clique do mouse, e a ação que ele dispara. */
+export interface RegiaoClicavel {
+  readonly r: Retangulo;
+  readonly acao: Acao;
 }
 
 // Tela de referência 680×400; o canvas inteiro é escalado proporcionalmente.
