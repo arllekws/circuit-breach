@@ -10,6 +10,7 @@ Cada porta, ponte e laser do laboratório é controlado por um circuito, e cada 
 ```bash
 npm install
 npm run dev      # abre o jogo em http://localhost:5173
+                 # em desenvolvimento: ?fase=3-2 abre direto numa fase
 npm test         # testes (Vitest)
 npm run tipos    # checagem de tipos (tsc --noEmit)
 npm run build    # gera dist/ para publicação
@@ -32,6 +33,10 @@ Controles: setas/WASD movem · E interage · Q Scanner · R reinicia · Esc paus
 | Satisfatibilidade (portas em 1 e lasers em 0) | `src/logica/satisfatibilidade.ts` → `solucoes`, `satisfativel` | `testes/logica/satisfatibilidadeMinimo.test.ts` (fases 1-1, 3-2, 5-1) |
 | Mínimo de trocas (distância de Hamming) | `src/logica/minimoTrocas.ts` → `minimoTrocas`, `minimoTrocasSeguro` | `testes/logica/satisfatibilidadeMinimo.test.ts` |
 | Regras de inferência (MP, MT, SH, SD, Simp., Conj., Adição) | `src/logica/inferencia.ts` → `aplicarRegra` | `testes/logica/inferencia.test.ts` (inclui a prova da fase 5-2) |
-| Fase verificada pela tabela-verdade | `src/fases/validar.ts` → `validarFase` | `testes/fases/validar.test.ts` |
+| Fase verificada pela tabela-verdade | `src/fases/validar.ts` → `validarFase` | `testes/fases/validar.test.ts`, `testes/fases/todasAsFases.test.ts` (zera cada fase) |
+| Laser instantâneo (restrição: circuito deve dar 0) | `src/jogo/aplicar.ts` → `interagir`; `src/jogo/regras.ts` → `algumLaserLigado` | `testes/jogo/setores123.test.ts` ("ligar R antes de desligar Q") |
+| Placa de pressão como proposição | `src/jogo/regras.ts` → `valoracaoComPlacas` | `testes/jogo/setores123.test.ts` (fase 2-1) |
+| Scanner (tabela-verdade com linha atual e linha-alvo) | `src/jogo/scanner.ts` → `tabelaDoScanner` | `testes/jogo/scannerProgresso.test.ts` |
+| Alerta e estrelas pelo mínimo de trocas | `src/jogo/regras.ts` → `limiteAlerta`, `estrelasPara` | `testes/jogo/aplicar.test.ts` |
 
 O plano do projeto está em [`docs/PLANO.md`](docs/PLANO.md) e o relatório de mecânica em `docs/relatorio-mecanica.pdf`.

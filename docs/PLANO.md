@@ -219,3 +219,15 @@ nunca é eliminada.
 
 `npx tsc --noEmit` · `npx vitest run` · `npm run build` · `npm run dev` e jogar as fases do marco no
 navegador (checando painel em tempo real, Scanner, alerta, estrelas) · a partir do M2, conferir o link do Pages.
+
+## Registro de mudanças em relação ao plano
+
+- **14/11 — M1, M2 e M3 concluídos** (motor lógico, fase 1-1, Setores 1–3 com 6 fases, Scanner, menu e progresso).
+- Interruptores são **sólidos**: o jogador encosta e aperta E (a letra e o dígito ficam sempre visíveis). O interruptor que E vai trocar ganha contorno âmbar.
+- Emissores de laser também são sólidos; o laser é uma restrição global (dispara quando a fórmula dá 1), não um feixe no mapa.
+- **Scanner cobra 2 de alerta uma vez por circuito**; depois disso a tabela daquele circuito fica visível sempre que ele está em foco. Scanner não conta como troca (não tira estrela).
+- Pontes ocupam uma célula e se comportam como portas (com desenho próprio); caixas não entram em porta/ponte nem na saída.
+- Máximo de **3 proposições por circuito** (validado), para a tabela do Scanner (2³ = 8 linhas) caber no painel com texto ≥ 11 px. A fase pode ter mais proposições no total.
+- Fase 2-1: mínimo **0 trocas** (a solução de 3 estrelas usa só a placa); usar o interruptor Q dá 2 estrelas.
+- Teste `todasAsFases` usa um **solucionador** (busca em largura sobre `aplicar`) que prova que cada fase é zerável no mapa com o mínimo de trocas — no lugar de sequências de teclas escritas à mão.
+- Sem extensão do navegador disponível, a conferência visual é feita por capturas de tela do Chrome sem janela, usando `?fase=` e `?teclas=` (só em desenvolvimento).
