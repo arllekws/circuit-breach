@@ -1,4 +1,5 @@
 import './estilo.css';
+import { ouvirMouse } from './entrada/mouse';
 import { comandoDaTecla, ouvirTeclado, type Comando } from './entrada/teclado';
 import { carregarFases } from './fases/carregar';
 import { aplicar } from './jogo/aplicar';
@@ -12,9 +13,10 @@ import {
 } from './jogo/progresso';
 import { circuitoEmFoco } from './jogo/regras';
 import type { Estado, Fase, Posicao } from './jogo/tipos';
+import { desenharDesafio } from './render/desafios';
 import { preencher } from './render/desenho';
 import { desenharAviso, desenharBarra, desenharPausa, desenharRodape, desenharVitoria } from './render/hud';
-import { ajustarCanvas, TELA } from './render/layout';
+import { ajustarCanvas, TELA, type RegiaoClicavel } from './render/layout';
 import { desenharMapa } from './render/mapa';
 import { desenharMenu, FASES_POR_LINHA } from './render/menu';
 import { desenharDica, desenharPainel } from './render/painelCircuito';
@@ -41,6 +43,8 @@ function iniciar(fases: readonly Fase[]): void {
   // Só visual: de onde o hacker está deslizando e desde quando.
   let deslize: { de: Posicao; inicio: number } = { de: estado.jogador, inicio: 0 };
   let aviso: { texto: string; cor: string; ate: number } | null = null;
+  // Regiões clicáveis do último quadro desenhado (só existem com um desafio aberto).
+  let regioes: RegiaoClicavel[] = [];
 
   const avisar = (texto: string): void => {
     aviso = { texto, cor: CORES.perigo, ate: performance.now() + DURACAO_DO_AVISO_MS };
@@ -54,6 +58,7 @@ function iniciar(fases: readonly Fase[]): void {
     }
     if (novo.evento === 'alerta_estourou') avisar('ALERTA MÁXIMO · seguranças a caminho · fase reiniciada');
     if (novo.evento === 'alarme') avisar('LASER DISPAROU · alarme · fase reiniciada');
+    if (novo.evento === 'erro') avisar('NÃO É EQUIVALENTE · alarme · +1 alerta');
     if (novo.evento === 'vitoria') {
       progresso = registrarVitoria(progresso, novo.fase.id, novo.estrelas);
       salvarProgresso(window.localStorage, progresso);
@@ -84,7 +89,7 @@ function iniciar(fases: readonly Fase[]): void {
       comandoNoMenu(comando);
       return;
     }
-    if (comando.tipo === 'confirmar') {
+    if (comando.tipo === 'confirmar' && estado.desafio === null) {
       if (estado.situacao === 'vitoria' && indice + 1 < fases.length) abrirFase(indice + 1);
       else if (estado.situacao !== 'jogando') tela = 'menu'; // pausado, ou venceu a última fase
       return;
@@ -92,6 +97,7 @@ function iniciar(fases: readonly Fase[]): void {
     trocarEstado(aplicar(estado, comando));
   };
   ouvirTeclado(executar);
+  ouvirMouse(canvas, () => (tela === 'fase' ? regioes : []), executar);
 
   // Só em desenvolvimento: ?teclas=Enter,w,w,d,e reproduz uma sequência de teclas ao abrir
   // (para conferir telas e ensaiar a apresentação). Não existe na versão publicada.
@@ -114,15 +120,21 @@ function iniciar(fases: readonly Fase[]): void {
 
     preencher(ctx, { x: 0, y: 0, w: TELA.w, h: TELA.h }, CORES.fundoTela);
     desenharBarra(ctx, estado);
-    desenharMapa(ctx, estado, posicaoVisual);
-    const yLivre = desenharPainel(ctx, estado) + 6;
-    // Abaixo do circuito: a tabela do Scanner, se este circuito já foi escaneado; senão, a dica.
-    const foco = circuitoEmFoco(estado);
-    if (foco !== undefined && estado.escaneados.includes(foco.id)) desenharScanner(ctx, estado, foco, yLivre);
-    else desenharDica(ctx, estado, yLivre);
-    desenharRodape(ctx);
+    if (estado.desafio !== null) {
+      // Desafio aberto: ocupa o lugar do mapa e do painel.
+      regioes = desenharDesafio(ctx, estado);
+    } else {
+      regioes = [];
+      desenharMapa(ctx, estado, posicaoVisual);
+      const yLivre = desenharPainel(ctx, estado) + 6;
+      // Abaixo do circuito: a tabela do Scanner, se este circuito já foi escaneado; senão, a dica.
+      const foco = circuitoEmFoco(estado);
+      if (foco !== undefined && estado.escaneados.includes(foco.id)) desenharScanner(ctx, estado, foco, yLivre);
+      else desenharDica(ctx, estado, yLivre);
+      desenharRodape(ctx);
+    }
 
-    if (aviso !== null && agora < aviso.ate) desenharAviso(ctx, aviso.texto, aviso.cor);
+    if (aviso !== null && agora < aviso.ate) desenharAviso(ctx, aviso.texto, aviso.cor, estado.desafio !== null);
     if (estado.situacao === 'vitoria') desenharVitoria(ctx, estado, indice === fases.length - 1);
     if (estado.situacao === 'pausado') desenharPausa(ctx);
   };

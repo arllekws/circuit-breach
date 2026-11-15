@@ -1,4 +1,4 @@
-import { interruptorAoAlcance, portaAberta } from '../jogo/regras';
+import { interruptorAoAlcance, portaAberta, terminalAoAlcance } from '../jogo/regras';
 import type { Circuito, Estado, Posicao } from '../jogo/tipos';
 import { variaveis } from '../logica/tabelaVerdade';
 import { circulo, contornar, escrever, linha, preencher, type Ctx } from './desenho';
@@ -47,7 +47,7 @@ export function desenharMapa(ctx: Ctx, estado: Estado, posicaoVisual: Posicao): 
   const circuitos: Circuito[] = [...fase.portas, ...fase.lasers];
   for (const circuito of circuitos) {
     const usadas = variaveis(circuito.formula);
-    for (const entrada of [...fase.interruptores, ...fase.placas]) {
+    for (const entrada of [...fase.interruptores, ...fase.placas, ...fase.desafios]) {
       if (!usadas.includes(entrada.nome)) continue;
       const ligado = estado.valoracao[entrada.nome] === 1;
       linha(ctx, [centro(entrada.em), centro(circuito.em)], ligado ? CORES.um : CORES.zero, 1, [3, 4]);
@@ -141,6 +141,29 @@ export function desenharMapa(ctx: Ctx, estado: Estado, posicaoVisual: Posicao): 
       // Mostra qual interruptor a tecla E vai trocar.
       contornar(ctx, r, CORES.jogador, 1);
     }
+  }
+
+  // Terminais de desafio: um monitor com a letra da proposição. 0 = por resolver; 1 = resolvido.
+  const terminalPerto =
+    estado.situacao === 'jogando' && aoAlcance === undefined ? terminalAoAlcance(estado) : undefined;
+  for (const terminal of fase.desafios) {
+    const r = celula(terminal.em);
+    const tela = { x: r.x + 3, y: r.y + 4, w: CELULA - 6, h: CELULA - 12 };
+    const [cx] = centro(terminal.em);
+    const valor = estado.valoracao[terminal.nome] ?? 0;
+    if (valor === 1) {
+      preencher(ctx, tela, CORES.um);
+    } else {
+      preencher(ctx, tela, CORES.fundoMapa);
+      contornar(ctx, tela, CORES.zero, 1.5);
+    }
+    preencher(ctx, { x: r.x + 8, y: r.y + CELULA - 6, w: CELULA - 16, h: 3 }, valor === 1 ? CORES.um : CORES.zero);
+    escrever(ctx, `${terminal.nome}${valor}`, cx, tela.y + tela.h / 2 + 0.5, {
+      cor: valor === 1 ? CORES.fundoTela : CORES.texto,
+      alinhar: 'center',
+      negrito: true,
+    });
+    if (terminal === terminalPerto && valor === 0) contornar(ctx, r, CORES.jogador, 1);
   }
 
   // Caixas: bloco chapado com um X (para não confundir com interruptor).

@@ -27,7 +27,7 @@ export function desenharBarra(ctx: Ctx, estado: Estado): void {
   escrever(ctx, `${estado.alerta} / ${limite}`, 470, meio, { cor, negrito: true });
 
   // Estrelas que o jogador ainda leva se terminar agora.
-  const estrelas = estado.situacao === 'vitoria' ? estado.estrelas : estrelasPara(estado.trocas, estado.fase.minimo);
+  const estrelas = estado.situacao === 'vitoria' ? estado.estrelas : estrelasPara(estado.trocas, estado.fase.minimo, estado.erros);
   for (let i = 0; i < 3; i++) {
     estrela(ctx, 610 + i * 22, meio, 8, i < estrelas, CORES.jogador);
   }
@@ -44,9 +44,13 @@ export function desenharRodape(ctx: Ctx): void {
   );
 }
 
-/** Aviso curto sobre o mapa (ex.: alerta estourado). Aparece e some; não pisca. */
-export function desenharAviso(ctx: Ctx, texto: string, cor: string): void {
-  const r: Retangulo = { x: AREA_MAPA.x + 8, y: AREA_MAPA.y + 8, w: AREA_MAPA.w - 16, h: 24 };
+/**
+ * Aviso curto (ex.: alerta estourado). Aparece e some; não pisca.
+ * Fica no topo do mapa ou, com um desafio aberto, embaixo (para não cobrir o título).
+ */
+export function desenharAviso(ctx: Ctx, texto: string, cor: string, embaixo = false): void {
+  const y = embaixo ? AREA_MAPA.y + AREA_MAPA.h - 60 : AREA_MAPA.y + 8;
+  const r: Retangulo = { x: AREA_MAPA.x + 8, y, w: AREA_MAPA.w - 16, h: 24 };
   preencher(ctx, r, CORES.painel);
   contornar(ctx, r, cor, 1);
   escrever(ctx, texto, r.x + r.w / 2, r.y + r.h / 2, { cor, alinhar: 'center', negrito: true });
@@ -72,7 +76,8 @@ export function desenharVitoria(ctx: Ctx, estado: Estado, ultimaFase: boolean): 
   for (let i = 0; i < 3; i++) {
     estrela(ctx, cx - 34 + i * 34, r.y + 62, 13, i < estado.estrelas, CORES.jogador);
   }
-  escrever(ctx, `Trocas: ${estado.trocas} · mínimo: ${estado.fase.minimo}`, cx, r.y + 96, { alinhar: 'center' });
+  const erros = estado.erros > 0 ? ` · erros: ${estado.erros}` : '';
+  escrever(ctx, `Trocas: ${estado.trocas} · mínimo: ${estado.fase.minimo}${erros}`, cx, r.y + 96, { alinhar: 'center' });
   escrever(ctx, ultimaFase ? 'Enter: menu · R: jogar de novo' : 'Enter: próxima fase · R: jogar de novo', cx, r.y + 124, {
     cor: CORES.textoSecundario,
     alinhar: 'center',

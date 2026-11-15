@@ -18,7 +18,9 @@ export function desenharScanner(ctx: Ctx, estado: Estado, circuito: Circuito, y:
   const tabela = tabelaDoScanner(circuito, estado.valoracao);
 
   linha(ctx, [[x, y], [PAINEL.x + PAINEL.w - MARGEM, y]], CORES.bordaPainel);
-  escrever(ctx, 'SCANNER · tabela-verdade', x, y + 12, { cor: CORES.textoSecundario });
+  // A classificação sai da coluna final: tudo 1 = tautologia; tudo 0 = contradição.
+  const classe = { tautologia: 'tautologia', contradicao: 'contradição', contingencia: 'contingência' }[tabela.classificacao];
+  escrever(ctx, `SCANNER · ${classe}`, x, y + 12, { cor: CORES.textoSecundario });
 
   // Colunas: todas as proposições e subfórmulas; se não couber, só proposições + saída.
   ctx.font = fonte();
