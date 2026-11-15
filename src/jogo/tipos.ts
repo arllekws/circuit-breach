@@ -1,4 +1,5 @@
-import type { Formula, Valoracao } from '../logica/tipos';
+import type { ConectivoBinario, Formula, Valoracao } from '../logica/tipos';
+import type { DefinicaoDoDesafio, EstadoDoDesafio } from './desafios';
 
 // Camada de jogo: estado + funções puras. Conhece logica/, não conhece DOM nem Canvas.
 
@@ -32,6 +33,21 @@ export interface Circuito {
   /** Fórmula como escrita no JSON da fase, ex.: "(P -> Q) AND R". */
   readonly texto: string;
   readonly formula: Formula;
+  /**
+   * Porta opcional não faz parte da solução (ex.: painel corrompido, que nunca abre):
+   * fica fora do cálculo de satisfatibilidade e do mínimo de trocas.
+   */
+  readonly opcional: boolean;
+}
+
+/**
+ * Terminal de desafio (Firewall, terminais, Núcleo). É uma proposição como as outras:
+ * vale 0 até o desafio ser resolvido e 1 depois — e pode alimentar o circuito de uma porta.
+ */
+export interface TerminalDeDesafio {
+  readonly nome: string;
+  readonly em: Posicao;
+  readonly desafio: DefinicaoDoDesafio;
 }
 
 /** Fase já validada (ver fases/validar.ts). */
@@ -54,6 +70,7 @@ export interface Fase {
   readonly caixas: readonly Posicao[];
   readonly portas: readonly Circuito[];
   readonly lasers: readonly Circuito[];
+  readonly desafios: readonly TerminalDeDesafio[];
   readonly folgaAlerta: number;
   /** Mínimo de trocas para resolver, calculado pelo validador (nunca escrito à mão). */
   readonly minimo: number;
@@ -71,7 +88,13 @@ export type Evento =
   | 'alarme'
   | 'alerta_estourou'
   | 'reinicio'
-  | 'vitoria';
+  | 'vitoria'
+  | 'desafio_aberto'
+  | 'desafio_fechado'
+  | 'desafio_escolha'
+  | 'desafio_avancou'
+  | 'desafio_resolvido'
+  | 'erro';
 
 export interface Estado {
   readonly fase: Fase;
@@ -82,6 +105,10 @@ export interface Estado {
   readonly valoracao: Valoracao;
   readonly alerta: number;
   readonly trocas: number;
+  /** Tentativas erradas em desafios (circuito não equivalente, cabo errado, passo inválido). */
+  readonly erros: number;
+  /** Desafio aberto na tela, ou null quando o jogador está no mapa. */
+  readonly desafio: EstadoDoDesafio | null;
   /** Ids dos circuitos cuja tabela-verdade já foi revelada pelo Scanner. */
   readonly escaneados: readonly string[];
   readonly situacao: Situacao;
@@ -95,4 +122,9 @@ export type Acao =
   | { readonly tipo: 'interagir' }
   | { readonly tipo: 'scanner' }
   | { readonly tipo: 'reiniciar' }
-  | { readonly tipo: 'pausar' };
+  | { readonly tipo: 'pausar' }
+  // Ações de desafio (vêm do mouse; o teclado usa mover/interagir/confirmar):
+  | { readonly tipo: 'confirmar' }
+  | { readonly tipo: 'selecionar'; readonly indice: number }
+  | { readonly tipo: 'escolherPorta'; readonly espaco: number; readonly porta: ConectivoBinario }
+  | { readonly tipo: 'escolherCabo'; readonly indice: number };

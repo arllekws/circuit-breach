@@ -1,3 +1,4 @@
+import { abrirDesafio, aplicarNoDesafio } from './desafios';
 import { novoEstado } from './estado';
 import {
   algumLaserLigado,
@@ -9,6 +10,7 @@ import {
   limiteAlerta,
   mesmaPosicao,
   podeEntrar,
+  terminalAoAlcance,
   valoracaoComPlacas,
   vizinha,
 } from './regras';
@@ -21,6 +23,11 @@ import type { Acao, Direcao, Estado } from './tipos';
 export function aplicar(estado: Estado, acao: Acao): Estado {
   if (acao.tipo === 'reiniciar') {
     return novoEstado(estado.fase, 'reinicio');
+  }
+  if (estado.desafio !== null && estado.situacao === 'jogando') {
+    // Com um desafio aberto, Esc volta ao mapa (sem perder nada) e o resto vai para o desafio.
+    if (acao.tipo === 'pausar') return { ...estado, desafio: null, evento: 'desafio_fechado' };
+    return aplicarNoDesafio(estado, acao);
   }
   if (acao.tipo === 'pausar') {
     if (estado.situacao === 'jogando') return { ...estado, situacao: 'pausado' };
@@ -36,6 +43,8 @@ export function aplicar(estado: Estado, acao: Acao): Estado {
       return interagir(estado);
     case 'scanner':
       return usarScanner(estado);
+    default:
+      return estado; // ações de desafio sem desafio aberto não fazem nada
   }
 }
 
@@ -63,17 +72,27 @@ function mover(estado: Estado, direcao: Direcao): Estado {
     return {
       ...andou,
       situacao: 'vitoria',
-      estrelas: estrelasPara(estado.trocas, estado.fase.minimo),
+      estrelas: estrelasPara(estado.trocas, estado.fase.minimo, estado.erros),
       evento: 'vitoria',
     };
   }
   return andou;
 }
 
-/** Tecla E: troca o interruptor ao alcance. Cada troca muda a valoração e soma 1 ao alerta. */
+/**
+ * Tecla E: troca o interruptor ao alcance (cada troca muda a valoração e soma 1 ao alerta)
+ * ou abre o terminal de desafio encostado.
+ */
 function interagir(estado: Estado): Estado {
   const interruptor = interruptorAoAlcance(estado);
-  if (interruptor === undefined) return { ...estado, evento: 'bloqueado' };
+  if (interruptor === undefined) {
+    // Sem interruptor por perto: E abre o terminal de desafio encostado, se ainda não foi resolvido.
+    const terminal = terminalAoAlcance(estado);
+    if (terminal === undefined || estado.valoracao[terminal.nome] === 1) {
+      return { ...estado, evento: 'bloqueado' };
+    }
+    return { ...estado, desafio: abrirDesafio(terminal), evento: 'desafio_aberto' };
+  }
 
   // Todos os interruptores com a mesma letra compartilham a proposição: mudam juntos.
   const valoracao = {

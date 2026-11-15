@@ -10,6 +10,8 @@ export function novoEstado(fase: Fase, evento: Evento = 'inicio'): Estado {
     valoracao: fase.entradas,
     alerta: 0,
     trocas: 0,
+    erros: 0,
+    desafio: null,
     escaneados: [],
     situacao: 'jogando',
     estrelas: 0,

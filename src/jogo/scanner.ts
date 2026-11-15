@@ -1,4 +1,5 @@
 import { avaliar, subformulas } from '../logica/avaliar';
+import { classificar, type Classificacao } from '../logica/classificar';
 import { formatar } from '../logica/formatar';
 import { valoracoes, variaveis } from '../logica/tabelaVerdade';
 import { paraBit, type Bit, type Valoracao } from '../logica/tipos';
@@ -19,6 +20,8 @@ export interface TabelaDoScanner {
   /** Quantas das colunas são proposições. */
   readonly proposicoes: number;
   readonly linhas: readonly LinhaDoScanner[];
+  /** Tautologia (painel sempre ativo), contradição (painel corrompido) ou contingência. */
+  readonly classificacao: Classificacao;
 }
 
 /**
@@ -45,5 +48,6 @@ export function tabelaDoScanner(circuito: Circuito, valoracaoAtual: Valoracao): 
     colunas: [...nomes, ...partes.map((parte) => formatar(parte))],
     proposicoes: nomes.length,
     linhas,
+    classificacao: classificar(circuito.formula),
   };
 }

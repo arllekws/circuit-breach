@@ -1,11 +1,12 @@
 import { valoracaoComPlacas } from '../jogo/regras';
-import type { Circuito, Fase, Interruptor, Placa, Posicao } from '../jogo/tipos';
+import type { Circuito, Fase, Interruptor, Placa, Posicao, TerminalDeDesafio } from '../jogo/tipos';
 import { avaliar } from '../logica/avaliar';
 import { minimoTrocas, minimoTrocasSeguro } from '../logica/minimoTrocas';
 import { analisar, ErroDeSintaxe } from '../logica/parser';
 import type { Restricoes } from '../logica/satisfatibilidade';
 import { variaveis } from '../logica/tabelaVerdade';
 import type { Bit, Formula } from '../logica/tipos';
+import { lerDesafio } from './validarDesafio';
 
 export const LARGURA_MAXIMA = 13;
 export const ALTURA_MAXIMA = 11;
@@ -143,7 +144,32 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
     ocupar(em, `Placa ${item['nome']}`);
     placas.push({ nome: item['nome'], em });
   });
-  const proposicoes = new Set([...Object.keys(entradas), ...placas.map((p) => p.nome)]);
+  // --- terminais de desafio: proposições que começam em 0 e viram 1 quando o desafio é resolvido ---
+  const desafios: TerminalDeDesafio[] = [];
+  const listaDesafios = Array.isArray(json['desafios']) ? json['desafios'] : [];
+  listaDesafios.forEach((item: unknown, i: number) => {
+    if (!ehObjeto(item) || typeof item['nome'] !== 'string' || !ehPosicao(item['em'])) {
+      erros.push(`Desafio ${i} mal formado: esperado { "nome": "F", "em": [x, y], "tipo": "..." }.`);
+      return;
+    }
+    const nome = item['nome'];
+    if (nome in entradas || placas.some((p) => p.nome === nome)) {
+      erros.push(`${nome} é terminal de desafio: não pode ser também interruptor ou placa.`);
+    }
+    const lido = lerDesafio(item);
+    if (!lido.ok) {
+      erros.push(...lido.erros.map((erro) => `Desafio ${nome}: ${erro}`));
+      return;
+    }
+    const em = { x: item['em'][0], y: item['em'][1] };
+    ocupar(em, `Terminal ${nome}`);
+    desafios.push({ nome, em, desafio: lido.desafio });
+  });
+  const proposicoes = new Set([
+    ...Object.keys(entradas),
+    ...placas.map((p) => p.nome),
+    ...desafios.map((d) => d.nome),
+  ]);
   if (proposicoes.size === 0) erros.push('A fase precisa de pelo menos uma proposição.');
 
   // --- circuitos: portas/pontes (devem dar 1) e lasers (devem dar 0) ---
@@ -177,7 +203,14 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
           `A fórmula "${item['formula']}" usa ${usadas.length} proposições; o máximo por circuito é ${MAXIMO_DE_PROPOSICOES_POR_CIRCUITO}.`,
         );
       }
-      circuitos.push({ id: `${tipo}-${i}`, tipo, em, texto: item['formula'], formula });
+      circuitos.push({
+        id: `${tipo}-${i}`,
+        tipo,
+        em,
+        texto: item['formula'],
+        formula,
+        opcional: item['opcional'] === true,
+      });
     });
     return circuitos;
   };
@@ -194,11 +227,15 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
 
   // --- verificação lógica pelo gerador de tabela-verdade ---
   // Valoração inicial completa: interruptores (do JSON) + placas (pelo que está sobre elas).
-  const inicial = valoracaoComPlacas(placas, entradas, inicio, caixas);
+  const semDesafios: Record<string, Bit> = { ...entradas };
+  for (const terminal of desafios) semDesafios[terminal.nome] = 0;
+  const inicial = valoracaoComPlacas(placas, semDesafios, inicio, caixas);
   // Placas não custam troca: são proposições "livres" no cálculo do mínimo.
-  const livres = placas.map((p) => p.nome);
+  // Resolver um desafio também não é troca de interruptor.
+  const livres = [...placas.map((p) => p.nome), ...desafios.map((d) => d.nome)];
   const restricoes: Restricoes = {
-    devemSer1: portas.map((c) => c.formula),
+    // Portas opcionais (ex.: painel corrompido) não fazem parte da solução.
+    devemSer1: portas.filter((c) => !c.opcional).map((c) => c.formula),
     devemSer0: lasers.map((c) => c.formula),
   };
   for (const laser of lasers) {
@@ -238,6 +275,7 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
       caixas,
       portas,
       lasers,
+      desafios,
       folgaAlerta: folgaAlerta as number,
       minimo: seguro.trocas,
     },

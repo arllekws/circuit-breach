@@ -1,6 +1,15 @@
 import { avaliar } from '../logica/avaliar';
 import type { Bit, Valoracao } from '../logica/tipos';
-import type { Circuito, Direcao, Estado, Fase, Interruptor, Placa, Posicao } from './tipos';
+import type {
+  Circuito,
+  Direcao,
+  Estado,
+  Fase,
+  Interruptor,
+  Placa,
+  Posicao,
+  TerminalDeDesafio,
+} from './tipos';
 
 export const DESLOCAMENTO: Readonly<Record<Direcao, Posicao>> = {
   cima: { x: 0, y: -1 },
@@ -24,9 +33,12 @@ export function limiteAlerta(fase: Fase): number {
   return fase.minimo + fase.folgaAlerta;
 }
 
-/** Estrelas: 3 com o mínimo de trocas, 2 com até 2 trocas extras, 1 para qualquer solução. */
-export function estrelasPara(trocas: number, minimo: number): 1 | 2 | 3 {
-  const extras = trocas - minimo;
+/**
+ * Estrelas: 3 com o mínimo de trocas, 2 com até 2 trocas extras, 1 para qualquer solução.
+ * Erros em desafios (cabo errado, passo inválido…) contam como trocas extras.
+ */
+export function estrelasPara(trocas: number, minimo: number, erros = 0): 1 | 2 | 3 {
+  const extras = trocas - minimo + erros;
   if (extras <= 0) return 3;
   if (extras <= 2) return 2;
   return 1;
@@ -76,11 +88,12 @@ function parede(fase: Fase, p: Posicao): boolean {
   return fase.paredes[p.y]?.[p.x] !== false; // fora do mapa conta como parede
 }
 
-/** Célula ocupada por algo fixo e sólido: parede, interruptor ou emissor de laser. */
+/** Célula ocupada por algo fixo e sólido: parede, interruptor, terminal ou emissor de laser. */
 function solida(fase: Fase, p: Posicao): boolean {
   return (
     parede(fase, p) ||
     interruptorEm(fase, p) !== undefined ||
+    fase.desafios.some((terminal) => mesmaPosicao(terminal.em, p)) ||
     fase.lasers.some((laser) => mesmaPosicao(laser.em, p))
   );
 }
@@ -111,6 +124,17 @@ export function interruptorAoAlcance(estado: Estado): Interruptor | undefined {
   const ordem: Direcao[] = [estado.direcao, 'cima', 'direita', 'baixo', 'esquerda'];
   for (const direcao of ordem) {
     const achado = interruptorEm(estado.fase, vizinha(estado.jogador, direcao));
+    if (achado !== undefined) return achado;
+  }
+  return undefined;
+}
+
+/** Terminal de desafio ao alcance do jogador (mesma regra do interruptor). */
+export function terminalAoAlcance(estado: Estado): TerminalDeDesafio | undefined {
+  const ordem: Direcao[] = [estado.direcao, 'cima', 'direita', 'baixo', 'esquerda'];
+  for (const direcao of ordem) {
+    const alvo = vizinha(estado.jogador, direcao);
+    const achado = estado.fase.desafios.find((terminal) => mesmaPosicao(terminal.em, alvo));
     if (achado !== undefined) return achado;
   }
   return undefined;
