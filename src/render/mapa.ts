@@ -2,10 +2,17 @@ import { interruptorAoAlcance, portaAberta } from '../jogo/regras';
 import type { Circuito, Estado, Posicao } from '../jogo/tipos';
 import { variaveis } from '../logica/tabelaVerdade';
 import { circulo, contornar, escrever, linha, preencher, type Ctx } from './desenho';
-import { AREA_MAPA, origemDoMapa } from './layout';
+import { AREA_MAPA, origemDoMapa, type Retangulo } from './layout';
 import { CELULA, CORES } from './tema';
 
 // Desenha o mapa a partir do estado. NÃO decide regra: só pergunta ao jogo (ex.: portaAberta).
+
+const dentro = (r: Retangulo, folga: number): Retangulo => ({
+  x: r.x + folga,
+  y: r.y + folga,
+  w: r.w - folga * 2,
+  h: r.h - folga * 2,
+});
 
 /**
  * @param posicaoVisual posição do hacker em células (pode ser fracionária durante a animação).
@@ -13,7 +20,7 @@ import { CELULA, CORES } from './tema';
 export function desenharMapa(ctx: Ctx, estado: Estado, posicaoVisual: Posicao): void {
   const { fase } = estado;
   const origem = origemDoMapa(fase);
-  const celula = (p: Posicao) => ({
+  const celula = (p: Posicao): Retangulo => ({
     x: origem.x + p.x * CELULA,
     y: origem.y + p.y * CELULA,
     w: CELULA,
@@ -36,31 +43,59 @@ export function desenharMapa(ctx: Ctx, estado: Estado, posicaoVisual: Posicao): 
     }
   }
 
-  // Linhas tracejadas finas: cada interruptor ligado aos circuitos que ele alimenta.
+  // Linhas tracejadas finas: cada interruptor/placa ligado aos circuitos que alimenta.
   const circuitos: Circuito[] = [...fase.portas, ...fase.lasers];
   for (const circuito of circuitos) {
     const usadas = variaveis(circuito.formula);
-    for (const interruptor of fase.interruptores) {
-      if (!usadas.includes(interruptor.nome)) continue;
-      const ligado = estado.valoracao[interruptor.nome] === 1;
-      linha(ctx, [centro(interruptor.em), centro(circuito.em)], ligado ? CORES.um : CORES.zero, 1, [3, 4]);
+    for (const entrada of [...fase.interruptores, ...fase.placas]) {
+      if (!usadas.includes(entrada.nome)) continue;
+      const ligado = estado.valoracao[entrada.nome] === 1;
+      linha(ctx, [centro(entrada.em), centro(circuito.em)], ligado ? CORES.um : CORES.zero, 1, [3, 4]);
     }
   }
 
   // Saída: tracejada em verde.
-  const saida = celula(fase.saida);
-  contornar(ctx, { x: saida.x + 3, y: saida.y + 3, w: CELULA - 6, h: CELULA - 6 }, CORES.sucesso, 2, [4, 3]);
+  contornar(ctx, dentro(celula(fase.saida), 3), CORES.sucesso, 2, [4, 3]);
 
-  // Portas: fechada = caixa vermelha com 0; aberta = só os batentes verdes com 1.
+  // Placas de pressão: moldura no chão com a letra. 1 = ciano preenchido; 0 = só contorno.
+  for (const placa of fase.placas) {
+    const caixa = dentro(celula(placa.em), 5);
+    const [cx, cy] = centro(placa.em);
+    const valor = estado.valoracao[placa.nome] ?? 0;
+    if (valor === 1) preencher(ctx, caixa, CORES.um);
+    contornar(ctx, caixa, valor === 1 ? CORES.um : CORES.zero, 1, [2, 2]);
+    escrever(ctx, `${placa.nome}${valor}`, cx, cy + 0.5, {
+      cor: valor === 1 ? CORES.fundoTela : CORES.texto,
+      alinhar: 'center',
+      negrito: true,
+    });
+  }
+
+  // Portas e pontes. Fechada = vermelha com 0; aberta = verde com 1 (e formas diferentes).
   for (const porta of fase.portas) {
     const r = celula(porta.em);
     const [cx, cy] = centro(porta.em);
-    if (portaAberta(estado, porta)) {
+    const aberta = portaAberta(estado, porta);
+    if (porta.tipo === 'ponte') {
+      if (aberta) {
+        // Ponte estendida: tábuas atravessando o vão.
+        preencher(ctx, r, CORES.fundoMapa);
+        for (const dy of [5, 13, 21]) preencher(ctx, { x: r.x, y: r.y + dy, w: CELULA, h: 4 }, CORES.sucesso);
+        escrever(ctx, '1', cx, cy + 0.5, { cor: CORES.texto, alinhar: 'center', negrito: true });
+      } else {
+        // Ponte recolhida: vão escuro, contorno vermelho tracejado.
+        preencher(ctx, r, CORES.fundoTela);
+        contornar(ctx, r, CORES.perigo, 2, [4, 3]);
+        escrever(ctx, '0', cx, cy + 0.5, { cor: CORES.perigo, alinhar: 'center', negrito: true });
+      }
+    } else if (aberta) {
+      // Porta aberta: só os batentes.
       preencher(ctx, r, CORES.fundoMapa);
       preencher(ctx, { x: r.x, y: r.y, w: 4, h: CELULA }, CORES.sucesso);
       preencher(ctx, { x: r.x + CELULA - 4, y: r.y, w: 4, h: CELULA }, CORES.sucesso);
-      escrever(ctx, '1', cx, cy, { cor: CORES.sucesso, alinhar: 'center', negrito: true });
+      escrever(ctx, '1', cx, cy + 0.5, { cor: CORES.sucesso, alinhar: 'center', negrito: true });
     } else {
+      // Porta trancada: caixa cheia com a trava.
       preencher(ctx, r, CORES.painel);
       contornar(ctx, r, CORES.perigo, 2);
       linha(ctx, [[r.x + 5, cy - 8], [r.x + CELULA - 5, cy - 8]], CORES.perigo, 2);
@@ -68,11 +103,29 @@ export function desenharMapa(ctx: Ctx, estado: Estado, posicaoVisual: Posicao): 
     }
   }
 
+  // Emissores de laser: losango vermelho. Em jogo estão sempre em 0 (se der 1, a fase reinicia).
+  for (const laser of fase.lasers) {
+    const [cx, cy] = centro(laser.em);
+    const raio = CELULA / 2 - 3;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - raio);
+    ctx.lineTo(cx + raio, cy);
+    ctx.lineTo(cx, cy + raio);
+    ctx.lineTo(cx - raio, cy);
+    ctx.closePath();
+    ctx.fillStyle = CORES.painel;
+    ctx.fill();
+    ctx.strokeStyle = CORES.perigo;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    escrever(ctx, '0', cx, cy + 0.5, { cor: CORES.perigo, alinhar: 'center', negrito: true });
+  }
+
   // Interruptores: quadrado com a letra e o dígito. 1 = ciano preenchido; 0 = só contorno.
   const aoAlcance = estado.situacao === 'jogando' ? interruptorAoAlcance(estado) : undefined;
   for (const interruptor of fase.interruptores) {
     const r = celula(interruptor.em);
-    const caixa = { x: r.x + 3, y: r.y + 3, w: CELULA - 6, h: CELULA - 6 };
+    const caixa = dentro(r, 3);
     const [cx, cy] = centro(interruptor.em);
     const valor = estado.valoracao[interruptor.nome] ?? 0;
     if (valor === 1) {
@@ -88,6 +141,15 @@ export function desenharMapa(ctx: Ctx, estado: Estado, posicaoVisual: Posicao): 
       // Mostra qual interruptor a tecla E vai trocar.
       contornar(ctx, r, CORES.jogador, 1);
     }
+  }
+
+  // Caixas: bloco chapado com um X (para não confundir com interruptor).
+  for (const posicao of estado.caixas) {
+    const caixa = dentro(celula(posicao), 4);
+    preencher(ctx, caixa, CORES.parede);
+    contornar(ctx, caixa, CORES.texto, 1.5);
+    linha(ctx, [[caixa.x, caixa.y], [caixa.x + caixa.w, caixa.y + caixa.h]], CORES.texto, 1);
+    linha(ctx, [[caixa.x + caixa.w, caixa.y], [caixa.x, caixa.y + caixa.h]], CORES.texto, 1);
   }
 
   // O hacker: círculo âmbar, com um ponto indicando para onde está virado.
