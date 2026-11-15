@@ -1,10 +1,15 @@
 import { novoEstado } from './estado';
 import {
+  algumLaserLigado,
+  caixaPodeIrPara,
+  circuitoEmFoco,
+  CUSTO_DO_SCANNER,
   estrelasPara,
   interruptorAoAlcance,
   limiteAlerta,
   mesmaPosicao,
   podeEntrar,
+  valoracaoComPlacas,
   vizinha,
 } from './regras';
 import type { Acao, Direcao, Estado } from './tipos';
@@ -29,25 +34,40 @@ export function aplicar(estado: Estado, acao: Acao): Estado {
       return mover(estado, acao.direcao);
     case 'interagir':
       return interagir(estado);
+    case 'scanner':
+      return usarScanner(estado);
   }
 }
 
 function mover(estado: Estado, direcao: Direcao): Estado {
   const destino = vizinha(estado.jogador, direcao);
-  if (!podeEntrar(estado, destino)) {
-    return { ...estado, direcao, evento: 'bloqueado' };
+  const bloqueado: Estado = { ...estado, direcao, evento: 'bloqueado' };
+  if (!podeEntrar(estado, destino)) return bloqueado;
+
+  // Caixa no caminho: é empurrada uma célula, se houver chão livre atrás dela.
+  let caixas = estado.caixas;
+  if (caixas.some((caixa) => mesmaPosicao(caixa, destino))) {
+    const alem = vizinha(destino, direcao);
+    if (!caixaPodeIrPara(estado, alem)) return bloqueado;
+    caixas = caixas.map((caixa) => (mesmaPosicao(caixa, destino) ? alem : caixa));
   }
+
+  // Andar ou empurrar pode pisar/soltar placas de pressão: a valoração muda sem custar alerta.
+  const valoracao = valoracaoComPlacas(estado.fase.placas, estado.valoracao, destino, caixas);
+  if (algumLaserLigado(estado.fase, valoracao)) {
+    return novoEstado(estado.fase, 'alarme');
+  }
+
+  const andou: Estado = { ...estado, jogador: destino, direcao, caixas, valoracao, evento: 'andou' };
   if (mesmaPosicao(destino, estado.fase.saida)) {
     return {
-      ...estado,
-      jogador: destino,
-      direcao,
+      ...andou,
       situacao: 'vitoria',
       estrelas: estrelasPara(estado.trocas, estado.fase.minimo),
       evento: 'vitoria',
     };
   }
-  return { ...estado, jogador: destino, direcao, evento: 'andou' };
+  return andou;
 }
 
 /** Tecla E: troca o interruptor ao alcance. Cada troca muda a valoração e soma 1 ao alerta. */
@@ -60,10 +80,31 @@ function interagir(estado: Estado): Estado {
     ...estado.valoracao,
     [interruptor.nome]: estado.valoracao[interruptor.nome] === 1 ? 0 : 1,
   } as const;
-  const alerta = estado.alerta + 1;
 
+  // Laser é instantâneo: se algum circuito de laser der 1 na nova valoração, o alarme toca
+  // e o jogador volta ao início — mesmo que fosse só um estado intermediário.
+  if (algumLaserLigado(estado.fase, valoracao)) {
+    return novoEstado(estado.fase, 'alarme');
+  }
+  const alerta = estado.alerta + 1;
   if (alerta > limiteAlerta(estado.fase)) {
     return novoEstado(estado.fase, 'alerta_estourou');
   }
   return { ...estado, valoracao, alerta, trocas: estado.trocas + 1, evento: 'troca' };
+}
+
+/**
+ * Tecla Q: revela a tabela-verdade do circuito em foco. Soma 2 ao alerta (uma vez por
+ * circuito); não conta como troca, então não tira estrelas.
+ */
+function usarScanner(estado: Estado): Estado {
+  const circuito = circuitoEmFoco(estado);
+  if (circuito === undefined || estado.escaneados.includes(circuito.id)) {
+    return { ...estado, evento: 'bloqueado' };
+  }
+  const alerta = estado.alerta + CUSTO_DO_SCANNER;
+  if (alerta > limiteAlerta(estado.fase)) {
+    return novoEstado(estado.fase, 'alerta_estourou');
+  }
+  return { ...estado, alerta, escaneados: [...estado.escaneados, circuito.id], evento: 'scanner' };
 }

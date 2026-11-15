@@ -1,4 +1,5 @@
-import type { Circuito, Fase, Interruptor, Posicao } from '../jogo/tipos';
+import { valoracaoComPlacas } from '../jogo/regras';
+import type { Circuito, Fase, Interruptor, Placa, Posicao } from '../jogo/tipos';
 import { avaliar } from '../logica/avaliar';
 import { minimoTrocas, minimoTrocasSeguro } from '../logica/minimoTrocas';
 import { analisar, ErroDeSintaxe } from '../logica/parser';
@@ -8,6 +9,8 @@ import type { Bit, Formula } from '../logica/tipos';
 
 export const LARGURA_MAXIMA = 13;
 export const ALTURA_MAXIMA = 11;
+/** Mais que isso e a tabela-verdade do Scanner (2ⁿ linhas) não cabe no painel. */
+export const MAXIMO_DE_PROPOSICOES_POR_CIRCUITO = 3;
 
 export type ResultadoDaValidacao =
   | { readonly ok: true; readonly fase: Fase; readonly avisos: readonly string[] }
@@ -23,7 +26,7 @@ const ehPosicao = (valor: unknown): valor is [number, number] =>
  * Valida o JSON de uma fase e devolve a fase pronta para o jogo.
  *
  * Além do formato, passa a fase pelo gerador de tabela-verdade:
- *  - toda fórmula precisa ser bem formada e só usar proposições declaradas em "entradas";
+ *  - toda fórmula precisa ser bem formada e só usar proposições da fase (interruptores e placas);
  *  - nenhum laser pode começar ligado;
  *  - a fase precisa ter solução (satisfatibilidade) alcançável sem disparar laser;
  *  - o mínimo de trocas é CALCULADO aqui, nunca escrito à mão.
@@ -47,6 +50,7 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
   // --- mapa ---
   const linhas = json['mapa'];
   const paredes: boolean[][] = [];
+  const caixas: Posicao[] = [];
   let inicio: Posicao | undefined;
   let saida: Posicao | undefined;
   let largura = 0;
@@ -68,6 +72,8 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
         } else if (simbolo === 'X') {
           if (saida !== undefined) erros.push('O mapa tem mais de uma saída (X).');
           saida = { x, y };
+        } else if (simbolo === 'C') {
+          caixas.push({ x, y });
         } else if (simbolo !== '#' && simbolo !== '.') {
           erros.push(`Símbolo desconhecido "${simbolo}" no mapa, em (${x}, ${y}).`);
         }
@@ -81,8 +87,8 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
 
   // --- entradas (valoração inicial) ---
   const entradas: Record<string, Bit> = {};
-  if (!ehObjeto(json['entradas']) || Object.keys(json['entradas']).length === 0) {
-    erros.push('Campo "entradas" deve atribuir 0 ou 1 a pelo menos uma proposição.');
+  if (!ehObjeto(json['entradas'])) {
+    erros.push('Campo "entradas" deve atribuir 0 ou 1 a cada interruptor.');
   } else {
     for (const [nome, valor] of Object.entries(json['entradas'])) {
       if (valor === 0 || valor === 1) entradas[nome] = valor;
@@ -100,6 +106,7 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
   };
   if (inicio !== undefined) ocupadas.add(`${inicio.x},${inicio.y}`);
   if (saida !== undefined) ocupadas.add(`${saida.x},${saida.y}`);
+  for (const caixa of caixas) ocupadas.add(`${caixa.x},${caixa.y}`);
 
   const interruptores: Interruptor[] = [];
   const listaInterruptores = Array.isArray(json['interruptores']) ? json['interruptores'] : [];
@@ -121,6 +128,24 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
     }
   }
 
+  // --- placas de pressão: proposições que não têm valor inicial escrito (dependem do mapa) ---
+  const placas: Placa[] = [];
+  const listaPlacas = Array.isArray(json['placas']) ? json['placas'] : [];
+  listaPlacas.forEach((item: unknown, i: number) => {
+    if (!ehObjeto(item) || typeof item['nome'] !== 'string' || !ehPosicao(item['em'])) {
+      erros.push(`Placa ${i} mal formada: esperado { "nome": "P", "em": [x, y] }.`);
+      return;
+    }
+    const em = { x: item['em'][0], y: item['em'][1] };
+    if (item['nome'] in entradas) {
+      erros.push(`${item['nome']} é placa de pressão: não pode ter valor em "entradas".`);
+    }
+    ocupar(em, `Placa ${item['nome']}`);
+    placas.push({ nome: item['nome'], em });
+  });
+  const proposicoes = new Set([...Object.keys(entradas), ...placas.map((p) => p.nome)]);
+  if (proposicoes.size === 0) erros.push('A fase precisa de pelo menos uma proposição.');
+
   // --- circuitos: portas/pontes (devem dar 1) e lasers (devem dar 0) ---
   const lerCircuitos = (campo: 'portas' | 'lasers'): Circuito[] => {
     const lista = Array.isArray(json[campo]) ? json[campo] : [];
@@ -141,10 +166,16 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
         erros.push(`Fórmula inválida em ${campo}[${i}] ("${item['formula']}"): ${erro.message}`);
         return;
       }
-      for (const nome of variaveis(formula)) {
-        if (!(nome in entradas)) {
-          erros.push(`A fórmula "${item['formula']}" usa ${nome}, que não está em "entradas".`);
+      const usadas = variaveis(formula);
+      for (const nome of usadas) {
+        if (!proposicoes.has(nome)) {
+          erros.push(`A fórmula "${item['formula']}" usa ${nome}, que não é interruptor nem placa da fase.`);
         }
+      }
+      if (usadas.length > MAXIMO_DE_PROPOSICOES_POR_CIRCUITO) {
+        erros.push(
+          `A fórmula "${item['formula']}" usa ${usadas.length} proposições; o máximo por circuito é ${MAXIMO_DE_PROPOSICOES_POR_CIRCUITO}.`,
+        );
       }
       circuitos.push({ id: `${tipo}-${i}`, tipo, em, texto: item['formula'], formula });
     });
@@ -162,17 +193,21 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
   if (erros.length > 0 || inicio === undefined || saida === undefined) return { ok: false, erros };
 
   // --- verificação lógica pelo gerador de tabela-verdade ---
+  // Valoração inicial completa: interruptores (do JSON) + placas (pelo que está sobre elas).
+  const inicial = valoracaoComPlacas(placas, entradas, inicio, caixas);
+  // Placas não custam troca: são proposições "livres" no cálculo do mínimo.
+  const livres = placas.map((p) => p.nome);
   const restricoes: Restricoes = {
     devemSer1: portas.map((c) => c.formula),
     devemSer0: lasers.map((c) => c.formula),
   };
   for (const laser of lasers) {
-    if (avaliar(laser.formula, entradas)) {
+    if (avaliar(laser.formula, inicial)) {
       erros.push(`O laser "${laser.texto}" já começa ligado na valoração inicial.`);
     }
   }
-  const hamming = minimoTrocas(entradas, restricoes);
-  const seguro = minimoTrocasSeguro(entradas, restricoes);
+  const hamming = minimoTrocas(inicial, restricoes, livres);
+  const seguro = minimoTrocasSeguro(inicial, restricoes, livres);
   if (hamming === null) {
     erros.push('A fase não tem solução: nenhuma valoração abre as portas com os lasers desligados.');
   } else if (seguro === null) {
@@ -197,8 +232,10 @@ export function validarFase(json: unknown): ResultadoDaValidacao {
       paredes,
       inicio,
       saida,
-      entradas,
+      entradas: inicial,
       interruptores,
+      placas,
+      caixas,
       portas,
       lasers,
       folgaAlerta: folgaAlerta as number,
