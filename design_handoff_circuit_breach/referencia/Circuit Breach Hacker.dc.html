@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#070C12;color:#CFE3F2;font-family:"JetBrains Mono",ui-monospace,monospace;}
+a{color:#F5B342;} a:hover{color:#CFE3F2;}
+</style>
+</helmet>
+<div style="padding:64px 72px 120px;display:flex;flex-direction:column;gap:64px;width:1520px;box-sizing:border-box;background:#070C12;color:#CFE3F2;font-family:'JetBrains Mono',ui-monospace,monospace">
+
+<header style="display:flex;flex-direction:column;gap:18px;max-width:1400px">
+  <div style="font-size:13px;color:#6B8499;letter-spacing:.08em">// v2 · MODO INVASÃO · CANVAS 2D ANIMADO · 680 × 400 A 1,5×</div>
+  <h1 style="margin:0;font-size:56px;line-height:1;font-weight:700">CIRCUIT BREACH <span style="color:#F5B342">://</span> modo invasão</h1>
+  <p style="margin:0;font-size:16px;line-height:1.6;max-width:1050px;text-wrap:pretty">Código correndo pela tela, mas com uma regra: <b>o código de fundo é o próprio jogo</b>. A chuva usa os símbolos da fórmula da fase, o log mostra a avaliação real do circuito e os pulsos mostram o valor 1 correndo pelos fios. Clique em qualquer tela para repetir a animação de entrada.</p>
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;font-size:13px;line-height:1.6">
+    <div style="padding:14px 16px;border:1px solid #2A3E52;background:#0E1621"><b style="color:#F5B342">Chuva de dados</b><br>Colunas sobem e descem em velocidades diferentes. Glifos 11 px nas cores de grade/parede: lê como textura, nunca como informação.</div>
+    <div style="padding:14px 16px;border:1px solid #2A3E52;background:#0E1621"><b style="color:#F5B342">Log ao vivo</b><br>No vazio abaixo do mapa, o terminal digita a avaliação passo a passo (IMP(1,1) = 1 …) e empurra as linhas para cima.</div>
+    <div style="padding:14px 16px;border:1px solid #2A3E52;background:#0E1621"><b style="color:#F5B342">Pulsos de sinal</b><br>Quadradinhos correm pelos fios em 1 até a porta. Fios em 0 ficam parados. As ligações do mapa “marcham” do interruptor até o alvo.</div>
+    <div style="padding:14px 16px;border:1px solid #2A3E52;background:#0E1621"><b style="color:#F5B342">Descriptografia</b><br>Títulos surgem de glifos embaralhados (0,7 s, uma vez). Linhas de status são digitadas com cursor sólido, sem piscar.</div>
+    <div style="padding:14px 16px;border:1px solid #2A3E52;background:#0E1621"><b style="color:#F5B342">Varredura</b><br>Com o Scanner aberto, uma linha de 1 px percorre o laboratório de cima para baixo.</div>
+    <div style="padding:14px 16px;border:1px solid #2A3E52;background:#0E1621"><b style="color:#F5B342">Créditos rolando</b><br>Na tela final os nomes sobem dentro do painel EQUIPE, em loop. As estrelas e o percentual contam até o total.</div>
+  </div>
+  <div style="font-size:13px;line-height:1.6;color:#6B8499;max-width:1100px">Isto quebra duas regras do briefing (animação ≤ 200 ms e nada de decoração). Por isso tudo é controlado no painel <b style="color:#CFE3F2">Tweaks</b>: <b style="color:#CFE3F2">atmosfera</b> (limpa / sutil / invasão), <b style="color:#CFE3F2">movimento</b> (desliga tudo para o telão) e <b style="color:#CFE3F2">velocidade</b>. Na tela de fase o código fica só nas margens: o circuito e a tabela nunca têm nada por trás.</div>
+</header>
+
+<div id="m" style="display:flex;gap:32px;align-items:flex-start">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px;white-space:nowrap">MENU</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Chuva atrás da grade de setores</span></div>
+    <canvas data-screen="menu" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+  </div>
+  <div style="width:340px;display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.6;padding-top:34px">
+    <div>A chuva fica só na metade direita, aparecendo entre os cartões. A coluna do título fica limpa.</div>
+    <div>Um pulso verde desce pelo barramento do setor concluído até o setor atual: o progresso “flui” para o próximo alvo.</div>
+    <div>A linha de status no topo digita mensagens do sistema em rodízio.</div>
+  </div>
+</div>
+
+<div id="f" style="display:flex;gap:32px;align-items:flex-start">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px;white-space:nowrap">FASE</span><span style="font-size:14px;font-weight:700;white-space:nowrap">3-2 · Scanner ativo</span></div>
+    <canvas data-screen="fase-scan" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+  </div>
+  <div style="width:340px;display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.6;padding-top:34px">
+    <div><b style="color:#F5B342">Topo do mapa</b> Chuva feita só de P, Q, R, →, ∧, 0, 1: os símbolos desta fase.</div>
+    <div><b style="color:#F5B342">Base do mapa</b> Log da avaliação. A linha da porta fica em vermelho porque é perigo de verdade.</div>
+    <div><b style="color:#F5B342">Circuito</b> Pulsos claros sobre o ciano. Só os fios em 1 se mexem, então o olho encontra onde o sinal para.</div>
+    <div style="color:#6B8499">Em níveis de 11 linhas não há vazio: chuva e log somem sozinhos.</div>
+  </div>
+</div>
+
+<div id="d" style="display:flex;gap:32px;align-items:flex-start">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px;white-space:nowrap">FASE</span><span style="font-size:14px;font-weight:700;white-space:nowrap">3-2 · com dica</span></div>
+    <canvas data-screen="fase-dica" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+  </div>
+  <div style="width:340px;font-size:13px;line-height:1.6;padding-top:34px">Mesmas camadas, sem a varredura. O painel do circuito não muda de layout em nenhum nível de atmosfera.</div>
+</div>
+
+<div id="w" style="display:flex;gap:32px;align-items:flex-start">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px;white-space:nowrap">FIREWALL</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Montagem · pulsos na árvore</span></div>
+    <canvas data-screen="firewall" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+  </div>
+  <div style="width:340px;font-size:13px;line-height:1.6;padding-top:34px">O sinal corre por OR e XOR e morre no NOT, que dá 0. Dá para ver por onde o circuito montado falha antes mesmo de ler a tabela.</div>
+</div>
+
+<div id="v" style="display:flex;gap:32px;align-items:flex-start">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px;white-space:nowrap">VITÓRIA</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Fase 1-1 concluída</span></div>
+    <canvas data-screen="vitoria" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+  </div>
+  <div style="width:340px;font-size:13px;line-height:1.6;padding-top:34px">“ACESSO LIBERADO” se descriptografa e as estrelas entram uma a uma. Atrás do véu, o log registra a porta aberta e o upload do setor.</div>
+</div>
+
+<div id="x" style="display:flex;gap:32px;align-items:flex-start">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px;white-space:nowrap">FINAL</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Sistema comprometido</span></div>
+    <canvas data-screen="final" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+  </div>
+  <div style="width:340px;display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.6;padding-top:34px">
+    <div>Chuva na tela inteira. Cada linha de texto ganha uma “placa” escura recortada da chuva, para continuar legível.</div>
+    <div>O comando é digitado, o título se descriptografa, as estrelas contam até 26 e os créditos sobem no painel EQUIPE.</div>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;atmosfera&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;limpa&quot;,&quot;sutil&quot;,&quot;invasão&quot;],&quot;default&quot;:&quot;invasão&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Modo invasão&quot;},&quot;movimento&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Modo invasão&quot;},&quot;velocidade&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.5,&quot;max&quot;:2,&quot;step&quot;:0.25,&quot;default&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Modo invasão&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { this.sync(); }
+  componentDidUpdate() { this.sync(); }
+  componentWillUnmount() { if (this.fx) this.fx.stop(); }
+  sync() {
+    const lvl = { limpa: 0, sutil: 1, 'invasão': 2 }[this.props.atmosfera ?? 'invasão'] ?? 2;
+    const opts = { lvl, motion: this.props.movimento ?? true, speed: this.props.velocidade ?? 1 };
+    import(new URL('cb-fx.js', document.baseURI).href).then(m => { this.fx = m; m.start(opts); }).catch(e => console.error(e));
+  }
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

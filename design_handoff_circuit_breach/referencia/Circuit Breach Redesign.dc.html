@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#070C12;color:#CFE3F2;font-family:"JetBrains Mono",ui-monospace,monospace;}
+a{color:#F5B342;} a:hover{color:#CFE3F2;}
+</style>
+</helmet>
+<div style="padding:64px 72px 120px;display:flex;flex-direction:column;gap:72px;width:1520px;box-sizing:border-box;background:#070C12;color:#CFE3F2;font-family:'JetBrains Mono',ui-monospace,monospace">
+
+<header style="display:flex;flex-direction:column;gap:20px;max-width:1400px">
+  <div style="font-size:13px;color:#6B8499;letter-spacing:.08em">// REDESIGN DA INTERFACE · CANVAS 2D · 680 × 400 LÓGICO · EXIBIDO A 1,5×</div>
+  <h1 style="margin:0;font-size:56px;line-height:1;font-weight:700">CIRCUIT BREACH <span style="color:#6B8499;font-weight:400">— O Hacker Lógico</span></h1>
+  <p style="margin:0;font-size:16px;line-height:1.6;color:#CFE3F2;max-width:1000px;text-wrap:pretty">Todas as telas abaixo são desenhadas por <b>cb-render.js</b> num &lt;canvas&gt; real, só com retângulos, linhas, círculos, polígonos e texto monoespaçado (mín. 11 px). Sem gradiente, sombra, brilho ou piscar. O arquivo serve de referência de implementação: cada componente é uma função reutilizável.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #2A3E52;background:#101B28"><span style="width:18px;height:18px;background:#2DD4BF"></span><span style="font-size:13px;white-space:nowrap">1 lógico · preenchido</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #2A3E52;background:#101B28"><span style="width:16px;height:16px;border:1px solid #6B8499;background:#0E1621"></span><span style="font-size:13px;white-space:nowrap">0 lógico · contorno</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #2A3E52;background:#101B28"><span style="width:18px;height:18px;background:#E5484D"></span><span style="font-size:13px;white-space:nowrap">perigo · alerta · bloqueio</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #2A3E52;background:#101B28"><span style="width:18px;height:18px;background:#3DD68C"></span><span style="font-size:13px;white-space:nowrap">sucesso · meta · alvo</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #2A3E52;background:#101B28"><span style="width:18px;height:18px;background:#F5B342"></span><span style="font-size:13px;white-space:nowrap">jogador · seleção · foco · estrelas</span></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:8px;font-size:13px;line-height:1.6;color:#CFE3F2">
+    <div style="padding:14px 16px;border:1px solid #2A3E52;background:#0E1621"><b style="color:#F5B342">Assinatura</b><br>Painéis com chanfro de 8 px (sup. dir. + inf. esq.) e aba-etiqueta inclinada no canto superior esquerdo. Vem da referência, sem neon.</div>
+    <div style="padding:14px 16px;border:1px solid #2A3E52;background:#0E1621"><b style="color:#F5B342">Tipografia</b><br>JetBrains Mono · 11 rótulos/meta · 12 corpo · 14 títulos/fórmulas de prova · 18 fórmula principal · 22–34 destaque. Só pesos 400 e 700.</div>
+    <div style="padding:14px 16px;border:1px solid #2A3E52;background:#0E1621"><b style="color:#F5B342">Nunca só cor</b><br>Cada estado tem também forma ou texto: preenchido/contorno, barra cruzando a porta/folhas abertas, ✓/✕, ▸ ATUAL, ◂ ALVO, borda tracejada = bloqueado.</div>
+  </div>
+</header>
+
+<section style="display:flex;flex-direction:column;gap:48px">
+  <h2 style="margin:0;font-size:28px;border-bottom:1px solid #2A3E52;padding-bottom:12px">01 · Tela de fase <span style="color:#6B8499;font-weight:400">— prioridade máxima</span></h2>
+
+  <div id="1a" style="display:flex;gap:32px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">1a</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Fase 3-2 · antes do Scanner (dica)</span></div>
+      <canvas data-screen="fase-dica" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+    </div>
+    <div style="width:340px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6;padding-top:34px">
+      <div><b style="color:#F5B342">1º</b> Bloco de saída: valor grande + “✕ PORTA TRANCADA” + META 1.</div>
+      <div><b style="color:#F5B342">2º</b> Árvore: entradas → portas com símbolo, nome e resultado. A raiz tem borda dupla e chip maior.</div>
+      <div><b style="color:#F5B342">3º</b> Mapa e hacker (âmbar), dica com cartões de operador.</div>
+      <div><b style="color:#6B8499">Secundário</b> HUD, rodapé de teclas, ligações tracejadas.</div>
+      <div><b style="color:#6B8499">Contraste máximo</b> Fórmula 18 px, chips ciano, vermelho/verde do resultado.</div>
+      <div><b style="color:#6B8499">“Quanto falta”</b> Linha do resultado diz quantas entradas da porta raiz já estão em 1 (AND: 1 de 2), sem entregar a resposta.</div>
+      <div><b style="color:#6B8499">HUD</b> Alerta em segmentos vermelhos (perigo, nunca ciano). Estrelas “POSSÍVEIS”: cheias = ainda conquistáveis; contorno = perdidas nesta tentativa.</div>
+      <div><b style="color:#6B8499">Telão</b> Mapa e painel lado a lado, resultado do circuito legível a distância pelo tamanho e pela cor.</div>
+    </div>
+  </div>
+
+  <div id="1b" style="display:flex;gap:32px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">1b</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Fase 3-2 · Scanner ativo</span></div>
+      <canvas data-screen="fase-scan" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+    </div>
+    <div style="width:340px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6;padding-top:34px">
+      <div>A tabela ocupa o mesmo espaço da dica, então o circuito continua no lugar e nada pula na tela.</div>
+      <div><b style="color:#3DD68C">◂ ALVO</b> Contorno verde nas linhas que satisfazem a meta.</div>
+      <div><b style="color:#F5B342">▸ ATUAL</b> Linha das entradas atuais: fundo de grade + marcador âmbar.</div>
+      <div>Dígitos 1 em ciano negrito e 0 em cinza. Texto de 11 px, linhas de 14 px: a tabela não compete com a fórmula de 18 px.</div>
+      <div><b style="color:#6B8499">Mapa</b> Caixa, placa de pressão e laser ligado (diamante + feixe vermelho com marcas por célula) também aparecem aqui.</div>
+    </div>
+  </div>
+
+  <div id="1c" style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">1c</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Feedback de eventos</span><span style="font-size:13px;color:#6B8499">· transição única ≤ 150 ms (troca de estado + toast entra deslizando 6 px). Sem piscar.</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px"><canvas data-screen="fb-porta" data-w="200" data-h="124" style="width:300px;height:186px;display:block;outline:1px solid #2A3E52"></canvas><span style="font-size:12px;color:#6B8499">Porta aberta · folhas se afastam</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><canvas data-screen="fb-laser" data-w="200" data-h="124" style="width:300px;height:186px;display:block;outline:1px solid #2A3E52"></canvas><span style="font-size:12px;color:#6B8499">Laser desativado · feixe vira trilha pontilhada</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><canvas data-screen="fb-ponte" data-w="200" data-h="124" style="width:300px;height:186px;display:block;outline:1px solid #2A3E52"></canvas><span style="font-size:12px;color:#6B8499">Ponte estendida · tábuas sobre o vão</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><canvas data-screen="fb-alarme" data-w="200" data-h="124" style="width:300px;height:186px;display:block;outline:1px solid #2A3E52"></canvas><span style="font-size:12px;color:#6B8499">Alarme · moldura vermelha fixa por 1 s + segmento</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><canvas data-screen="fb-atingido" data-w="200" data-h="124" style="width:300px;height:186px;display:block;outline:1px solid #2A3E52"></canvas><span style="font-size:12px;color:#6B8499">Jogador atingido · anel vermelho</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><canvas data-screen="fb-certo" data-w="200" data-h="124" style="width:300px;height:186px;display:block;outline:1px solid #2A3E52"></canvas><span style="font-size:12px;color:#6B8499">Circuito correto · ✓ + borda verde</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><canvas data-screen="fb-errado" data-w="200" data-h="124" style="width:300px;height:186px;display:block;outline:1px solid #2A3E52"></canvas><span style="font-size:12px;color:#6B8499">Circuito incorreto · ✕ + “saída ≠ meta”</span></div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:48px">
+  <h2 style="margin:0;font-size:28px;border-bottom:1px solid #2A3E52;padding-bottom:12px">02 · Menu, desafios e vitória</h2>
+
+  <div id="2a" style="display:flex;gap:32px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">2a</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Menu principal · seleção de setor</span></div>
+      <canvas data-screen="menu" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+    </div>
+    <div style="width:340px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6;padding-top:34px">
+      <div><b style="color:#F5B342">1º</b> Cartão âmbar selecionado + painel “ALVO SELECIONADO” com INVADIR.</div>
+      <div><b style="color:#F5B342">2º</b> Grade de setores: barramento vertical com nós (verde = setor concluído, âmbar = atual, contorno = bloqueado).</div>
+      <div><b style="color:#F5B342">3º</b> Progresso: estrelas totais + 10 segmentos de fases.</div>
+      <div><b style="color:#6B8499">Bloqueada</b> Borda tracejada + cadeado + texto cinza. O nome continua visível.</div>
+      <div><b style="color:#6B8499">Telão</b> Composição em duas colunas ocupa os 680 px. Título com 30 px.</div>
+      <div style="color:#6B8499">Nomes de fase 1-2 a 5-2 são provisórios: troque pelos do jogo.</div>
+    </div>
+  </div>
+
+  <div id="2b" style="display:flex;gap:32px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">2b</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Firewall · montagem (após um teste reprovado)</span></div>
+      <canvas data-screen="firewall" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+    </div>
+    <div style="width:340px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6;padding-top:34px">
+      <div><b style="color:#F5B342">1º</b> Fórmula com espaços numerados. O espaço em edição fica âmbar e a porta correspondente na árvore também.</div>
+      <div><b style="color:#F5B342">2º</b> Árvore viva do circuito montado, avaliada na linha ▸ da tabela, com “≠ ALVO”.</div>
+      <div><b style="color:#F5B342">3º</b> Tabela ALVO × SEU com ✓/✕ por linha, barra de 4 segmentos e diagnóstico.</div>
+      <div><b style="color:#6B8499">Interação</b> ←→ escolhe espaço, ↑↓ ou 1/2/3 escolhe a porta, Enter testa. Sem arrastar.</div>
+      <div><b style="color:#6B8499">Espaço</b> O vazio inferior virou a área da árvore e da paleta de portas.</div>
+    </div>
+  </div>
+
+  <div id="2c" style="display:flex;gap:32px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">2c</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Firewall espelhado</span></div>
+      <canvas data-screen="espelhado" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+    </div>
+    <div style="width:340px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6;padding-top:34px">
+      <div><b style="color:#F5B342">1º</b> Painel original no topo, com o valor dele.</div>
+      <div><b style="color:#F5B342">2º</b> Dois cabos idênticos em hierarquia. A diferença entre eles não depende de cor: cabo 1 é contínuo e cabo 2 é tracejado.</div>
+      <div><b style="color:#F5B342">3º</b> Rodadas (4 casas) e custo do erro.</div>
+      <div><b style="color:#6B8499">Bancada (opcional)</b> Teclas 1/2 alternam P e Q só para visualizar. Nenhuma regra muda. Nesta linha os dois cabos empatam, o que mostra que é preciso testar outras linhas.</div>
+    </div>
+  </div>
+
+  <div id="2d" style="display:flex;gap:32px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">2d</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Terminais de segurança</span></div>
+      <canvas data-screen="terminais" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+    </div>
+    <div style="width:340px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6;padding-top:34px">
+      <div><b style="color:#F5B342">1º</b> Fala (14 px) → tradução (22 px): leitura de cima para baixo, uma única borda por cartão.</div>
+      <div><b style="color:#F5B342">2º</b> Legenda que liga cada símbolo da fórmula a uma frase.</div>
+      <div><b style="color:#F5B342">3º</b> Marcação com chip de valor (1 cheio / 0 contorno) + tecla ↑/↓.</div>
+      <div><b style="color:#6B8499">Estado</b> “MARCADO / NÃO MARCADO” na aba. CONFERIR só habilita com todos marcados (borda tracejada até lá).</div>
+    </div>
+  </div>
+
+  <div id="2e" style="display:flex;gap:32px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">2e</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Núcleo central · prova formal</span></div>
+      <canvas data-screen="nucleo" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+    </div>
+    <div style="width:340px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6;padding-top:34px">
+      <div><b style="color:#3DD68C">1º</b> META ¬P em painel verde fixo no canto.</div>
+      <div><b style="color:#F5B342">2º</b> Linhas da prova: fórmula 14 px, etiqueta PREMISSA ou regra (SH · 1, 2), separador DERIVADAS.</div>
+      <div><b style="color:#F5B342">3º</b> Regra selecionada com esquema em formato de prova (premissas / traço / ⊢) e “marcadas: 3, 4”.</div>
+      <div><b style="color:#6B8499">Logs completos</b> O log vai para a 2ª linha da entrada e quebra em quantas linhas precisar (11 px, 356 px de largura). Nada é cortado com reticências. A linha sob o cursor ganha fundo e barra âmbar.</div>
+      <div><b style="color:#6B8499">Espaço</b> Com até ~6 linhas de prova a coluna se preenche. A partir daí, rolagem por linha (↑↓).</div>
+    </div>
+  </div>
+
+  <div id="2f" style="display:flex;gap:32px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">2f</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Vitória da fase</span></div>
+      <canvas data-screen="vitoria" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+    </div>
+    <div style="width:340px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6;padding-top:34px">
+      <div><b style="color:#3DD68C">1º</b> “ACESSO LIBERADO” + 3 estrelas grandes (âmbar).</div>
+      <div><b style="color:#F5B342">2º</b> Trocas × mínimo × alerta em três colunas, veredito “SOLUÇÃO ÓTIMA”.</div>
+      <div><b style="color:#F5B342">3º</b> Próxima ação: PRÓXIMA FASE (confirmação) ou REPETIR.</div>
+      <div><b style="color:#6B8499">Celebração contida</b> Mapa escurecido a 80%, painel de sucesso. Estrelas aparecem uma a uma a cada 120 ms, sem brilho. O circuito resolvido continua visível à direita.</div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:48px">
+  <h2 style="margin:0;font-size:28px;border-bottom:1px solid #2A3E52;padding-bottom:12px">03 · Novas telas</h2>
+
+  <div id="3a" style="display:flex;gap:32px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">3a</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Tela final do jogo</span></div>
+      <canvas data-screen="final" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+    </div>
+    <div style="width:340px;display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.6;padding-top:34px">
+      <div><b style="color:#3DD68C">1º</b> “SISTEMA COMPROMETIDO” + título: fechamento da invasão.</div>
+      <div><b style="color:#F5B342">2º</b> 26/30 estrelas, 87% e uma barra de 30 células (uma por estrela).</div>
+      <div><b style="color:#F5B342">3º</b> Relatório por setor (estrelas de cada fase) + trocas, alertas e provas.</div>
+      <div><b style="color:#6B8499">Créditos</b> Equipe e disciplina no painel EQUIPE. Botão VOLTAR AO MENU.</div>
+      <div style="color:#6B8499">Os números são de exemplo e vêm do save do jogador.</div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font-size:14px;line-height:1.6;max-width:1100px"><b>Tutorial integrado (fase 1-1).</b> O painel inferior vira uma lista de TREINAMENTO com 6 passos (✓ feito · ▸ atual · · pendente). Balões âmbar apontam para o alvo com uma linha e cantoneiras. O jogo nunca pausa e o passo avança quando a ação acontece.</div>
+    <div style="display:flex;flex-direction:column;gap:32px">
+      <div id="3b" style="display:flex;gap:32px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">3b</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Passos 1–2 · mover e interagir</span></div>
+          <canvas data-screen="tut1" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+        </div>
+        <div style="width:340px;font-size:13px;line-height:1.6;padding-top:34px">Trilha tracejada âmbar sugere o caminho até P. O balão some ao primeiro movimento e o passo 2 (“E”) aparece junto ao interruptor.</div>
+      </div>
+      <div id="3c" style="display:flex;gap:32px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">3c</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Passos 3–4 · ler valores e observar o circuito</span></div>
+          <canvas data-screen="tut2" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+        </div>
+        <div style="width:340px;font-size:13px;line-height:1.6;padding-top:34px">Cantoneiras no interruptor Q do mapa e na entrada Q do circuito, ligadas pelo balão: o mesmo valor está nos dois lugares. O passo 4 destaca a porta AND (1 de 2).</div>
+      </div>
+      <div id="3d" style="display:flex;gap:32px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px;align-items:center"><span style="background:#F5B342;color:#0A111A;font-weight:700;font-size:13px;padding:3px 8px">3d</span><span style="font-size:14px;font-weight:700;white-space:nowrap">Passos 5–6 · Scanner e saída</span></div>
+          <canvas data-screen="tut3" style="width:1020px;height:600px;display:block;outline:1px solid #2A3E52"></canvas>
+        </div>
+        <div style="width:340px;font-size:13px;line-height:1.6;padding-top:34px">O Scanner substitui a lista e a aba mostra “PASSO 5/6”. Quando a porta abre, o passo 6 aponta para a saída tracejada verde e o tutorial termina.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:36px">
+  <h2 style="margin:0;font-size:28px;border-bottom:1px solid #2A3E52;padding-bottom:12px">04 · Sistema de componentes <span style="color:#6B8499;font-weight:400">— medidas em px lógicos (680 × 400)</span></h2>
+
+  <div style="display:flex;gap:32px;align-items:flex-start">
+    <canvas data-screen="c-paineis" data-h="130" style="width:1020px;height:195px;display:block;outline:1px solid #2A3E52"></canvas>
+    <div style="width:340px;font-size:13px;line-height:1.65"><b>Painéis</b><br>Fundo #101B28 · chanfro 8 · borda 1 (padrão #2A3E52) ou 2 (destacado âmbar, perigo #E5484D, sucesso #3DD68C).<br>Cabeçalho = aba 16 px de altura, texto 11/700, padding 6, ponta inclinada de 8. Meta à direita, 11 px, a 12 da borda.<br>Padding interno 8–14. Rodapé: tracejado 2/3 + dica de tecla.</div>
+  </div>
+  <div style="display:flex;gap:32px;align-items:flex-start">
+    <canvas data-screen="c-botoes" data-h="48" style="width:1020px;height:72px;display:block;outline:1px solid #2A3E52"></canvas>
+    <div style="width:340px;font-size:13px;line-height:1.65"><b>Botões</b> · altura 24–30, chanfro 5, texto 12/700 centralizado.<br>Padrão: #0E1621 + borda 1. Selecionado: borda âmbar 2 + “▸”. Desabilitado: fundo #0A111A, borda tracejada 3/3, texto cinza. Confirmação: verde cheio, texto escuro. Perigo: borda vermelha 2. Tecla opcional à direita (16 px de altura).</div>
+  </div>
+  <div style="display:flex;gap:32px;align-items:flex-start">
+    <canvas data-screen="c-logica" data-h="160" style="width:1020px;height:240px;display:block;outline:1px solid #2A3E52"></canvas>
+    <div style="width:340px;font-size:13px;line-height:1.65"><b>Lógica</b><br>Valor: quadrado de 16/20/26. 1 = #2DD4BF cheio com dígito escuro; 0 = #0E1621 + contorno #6B8499 1–2 px com dígito claro; ? = tracejado.<br>Entrada 40×20 (nome | valor). Porta 88×22 (raiz 28 de altura, borda 2, chip 20): símbolo 14 · nome 11 · chip de resultado.<br>Conector: ciano 2 px quando 1, cinza 1 px quando 0, ortogonal. Resultado 250×42. Linha da tabela com 14 px.</div>
+  </div>
+  <div style="display:flex;gap:32px;align-items:flex-start">
+    <canvas data-screen="c-hud" data-h="150" style="width:1020px;height:225px;display:block;outline:1px solid #2A3E52"></canvas>
+    <div style="width:340px;font-size:13px;line-height:1.65"><b>HUD</b> · faixa 680×28.<br>Fase 14/700 + setor 11. Alerta: 110 px divididos em N segmentos de 11 de altura (vermelho cheio = usado). Contador fica vermelho a 1 do limite.<br>Estrelas r 7,5: âmbar cheia = possível, contorno = perdida. Toast 24 de altura, ícone 16. Balão de tutorial: borda âmbar 1 + aba âmbar.</div>
+  </div>
+  <div style="display:flex;gap:32px;align-items:flex-start">
+    <canvas data-screen="c-mapa" data-h="86" style="width:1020px;height:129px;display:block;outline:1px solid #2A3E52"></canvas>
+    <div style="width:340px;font-size:13px;line-height:1.65"><b>Mapa</b> · célula 30, elementos inset 3–5.<br>Porta trancada = barra cruzando; aberta = duas folhas. Laser = diamante com borda vermelha + feixe com marca a cada célula. Vão = hachura diagonal. Ligações tracejadas 3/3. Sempre há um dígito de valor visível.</div>
+  </div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount() { this.draw(); }
+  componentDidUpdate() { this.draw(); }
+  draw() {
+    import(new URL('cb-render.js', document.baseURI).href).then(m => m.renderAll()).catch(e => console.error(e));
+  }
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

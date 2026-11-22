@@ -238,3 +238,6 @@ navegador (checando painel em tempo real, Scanner, alerta, estrelas) · a partir
 - Porta com `"opcional": true` (painel corrompido) fica fora do cálculo de solução.
 - Estrelas: erros em desafios contam como trocas extras (`estrelasPara(trocas, minimo, erros)`), o que implementa D4.
 - `entrada/mouse.ts` importa só o tipo `RegiaoClicavel` e o tamanho da tela de `render/layout.ts`.
+- **22/11 — redesign da interface** portado do handoff (`design_handoff_circuit_breach/`): tela de fase, menu, Firewall (montagem e espelhado), terminais, Núcleo, vitória, pausa, **tela final** e **tutorial** novos. Regras, fórmulas e controles inalterados; novidades só de apresentação: tecla **M** (modo invasão, desligado por padrão), teclas **1/2/3** nos desafios (escolher porta; alternar a bancada do espelhado, que é só visual) e clique no menu.
+- Laser: o handoff desenhava o laser desligado com o dígito 1; aqui o dígito é sempre a **saída do circuito** (0 em jogo, 1 só no instante do alarme), para não contradizer a tabela-verdade.
+- Progresso salva também o melhor resultado de cada fase (trocas, alerta, erros) para o relatório final.

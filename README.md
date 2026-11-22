@@ -16,7 +16,13 @@ npm run tipos    # checagem de tipos (tsc --noEmit)
 npm run build    # gera dist/ para publicação
 ```
 
-Controles: setas/WASD movem · E interage · Q Scanner · R reinicia · Esc pausa · mouse (ou setas + Enter) nos desafios do Firewall.
+Controles: setas/WASD movem · E interage · Q Scanner · R reinicia · Esc pausa · Enter confirma · mouse (ou setas + Enter, e 1/2/3) nos desafios.
+
+**Modo invasão (tecla M):** alterna entre efeitos *desligados* (padrão), *sutis* e *invasão* — chuva de dados nos vazios do mapa, log ao vivo, pulsos nos fios em 1, títulos que se "descriptografam". A escolha fica salva no navegador. **Para apresentar no telão, deixe desligado**: só assim todas as animações ficam dentro do limite de 200 ms.
+
+Na primeira vez na fase 1-1 aparece o **tutorial integrado** (6 passos, não pausa o jogo). Depois da fase 5-2, Enter abre o **relatório final** (estrelas por setor, trocas, alertas e provas, vindos do progresso salvo).
+
+Interface: porte do handoff de design em `design_handoff_circuit_breach/` (tokens em `src/render/tema.ts`, componentes em `src/render/primitivas.ts`).
 
 ## Onde está cada conceito de lógica
 
