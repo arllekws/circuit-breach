@@ -93,8 +93,12 @@ export type DefinicaoDoDesafio = Montagem | Espelho | Terminais | Prova;
 
 export interface LinhaDaProva {
   readonly formula: Formula;
-  /** "premissa" ou a regra e as linhas usadas, ex.: "SH (1, 2)". */
+  /** "premissa" ou a regra e as linhas usadas, ex.: "Silogismo Hipotético (1, 2)". */
   readonly justificativa: string;
+  /** Regra que gerou a linha (ausente nas premissas). */
+  readonly regra?: Regra;
+  /** Números (a partir de 1) das linhas usadas pela regra. */
+  readonly usadas?: readonly number[];
 }
 
 export type EstadoDoDesafio =
@@ -360,10 +364,15 @@ export function aplicarNoDesafio(estado: Estado, acao: Acao): Estado {
       if (aberto.linhas.some((l) => iguais(l.formula, resultado.conclusao))) {
         return { ...parado, desafio: { ...aberto, botao: indice, recusa: 'Essa fórmula já está na prova.' } };
       }
-      const usadas = aberto.selecionadas.map((i) => i + 1).join(', ');
+      const usadas = aberto.selecionadas.map((i) => i + 1);
       const linhas: LinhaDaProva[] = [
         ...aberto.linhas,
-        { formula: resultado.conclusao, justificativa: `${REGRAS[botao.regra].nome} (${usadas})` },
+        {
+          formula: resultado.conclusao,
+          justificativa: `${REGRAS[botao.regra].nome} (${usadas.join(', ')})`,
+          regra: botao.regra,
+          usadas,
+        },
       ];
       if (iguais(resultado.conclusao, pedida.meta)) {
         // Chegou à conclusão pedida: próxima prova, ou Núcleo desligado.

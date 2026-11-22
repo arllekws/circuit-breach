@@ -49,3 +49,57 @@ export function faseLiberada(ids: readonly string[], progresso: Progresso, indic
 export function totalDeEstrelas(progresso: Progresso): number {
   return Object.values(progresso).reduce((soma, estrelas) => soma + estrelas, 0);
 }
+
+/** Melhor resultado de uma fase vencida, para o relatório da tela final. */
+export interface Resultado {
+  readonly estrelas: number;
+  readonly trocas: number;
+  readonly minimo: number;
+  /** Nível de alerta ao vencer. */
+  readonly alerta: number;
+  readonly erros: number;
+}
+
+export type Estatisticas = Readonly<Record<string, Resultado>>;
+
+const CHAVE_ESTATISTICAS = 'circuit-breach:estatisticas:v1';
+
+const ehResultado = (valor: unknown): valor is Resultado => {
+  if (typeof valor !== 'object' || valor === null) return false;
+  const r = valor as Record<string, unknown>;
+  return ['estrelas', 'trocas', 'minimo', 'alerta', 'erros'].every(
+    (campo) => typeof r[campo] === 'number' && Number.isFinite(r[campo]),
+  );
+};
+
+export function carregarEstatisticas(armazenamento: Armazenamento): Estatisticas {
+  try {
+    const bruto: unknown = JSON.parse(armazenamento.getItem(CHAVE_ESTATISTICAS) ?? '{}');
+    if (typeof bruto !== 'object' || bruto === null || Array.isArray(bruto)) return {};
+    const estatisticas: Record<string, Resultado> = {};
+    for (const [id, resultado] of Object.entries(bruto)) {
+      if (ehResultado(resultado)) estatisticas[id] = resultado;
+    }
+    return estatisticas;
+  } catch {
+    return {};
+  }
+}
+
+export function salvarEstatisticas(armazenamento: Armazenamento, estatisticas: Estatisticas): void {
+  try {
+    armazenamento.setItem(CHAVE_ESTATISTICAS, JSON.stringify(estatisticas));
+  } catch {
+    // Sem armazenamento: o relatório final usa só o que estiver em memória.
+  }
+}
+
+/** Guarda o melhor resultado da fase: mais estrelas e, no empate, menos trocas. */
+export function registrarResultado(estatisticas: Estatisticas, id: string, novo: Resultado): Estatisticas {
+  const antigo = estatisticas[id];
+  const melhor =
+    antigo === undefined ||
+    novo.estrelas > antigo.estrelas ||
+    (novo.estrelas === antigo.estrelas && novo.trocas < antigo.trocas);
+  return melhor ? { ...estatisticas, [id]: novo } : estatisticas;
+}
