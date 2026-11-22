@@ -1,4 +1,7 @@
+import type { Tutorial } from '../jogo/tutorial';
 import type { Acao, Fase, Posicao } from '../jogo/tipos';
+import type { Valoracao } from '../logica/tipos';
+import type { Variante } from './primitivas';
 import { CELULA } from './tema';
 
 export interface Retangulo {
@@ -16,12 +19,10 @@ export interface RegiaoClicavel {
 
 // Tela de referência 680×400; o canvas inteiro é escalado proporcionalmente.
 export const TELA = { w: 680, h: 400 } as const;
-export const BARRA: Retangulo = { x: 0, y: 0, w: 680, h: 34 };
-/** Mapa à esquerda (~60% da largura): cabem 13×11 células de 30 px. */
-export const AREA_MAPA: Retangulo = { x: 8, y: 40, w: 394, h: 334 };
+/** Mapa à esquerda. */
+export const AREA_MAPA: Retangulo = { x: 8, y: 34, w: 390, h: 338 };
 /** Painel do circuito à direita. */
-export const PAINEL: Retangulo = { x: 410, y: 40, w: 262, h: 334 };
-export const RODAPE: Retangulo = { x: 0, y: 378, w: 680, h: 22 };
+export const PAINEL: Retangulo = { x: 406, y: 34, w: 266, h: 338 };
 
 /** Canto superior esquerdo do mapa da fase, centralizado na área do mapa. */
 export function origemDoMapa(fase: Fase): Posicao {
@@ -29,6 +30,38 @@ export function origemDoMapa(fase: Fase): Posicao {
     x: Math.round(AREA_MAPA.x + (AREA_MAPA.w - fase.largura * CELULA) / 2),
     y: Math.round(AREA_MAPA.y + (AREA_MAPA.h - fase.altura * CELULA) / 2),
   };
+}
+
+export interface Aviso {
+  readonly variante: Variante;
+  readonly icone: string;
+  readonly texto: string;
+  /** Instante (ms) em que some. */
+  readonly ate: number;
+}
+
+/**
+ * Tudo que é só de apresentação e muda com o tempo: o renderer recebe isto junto com o
+ * estado do jogo. Nada aqui decide regra.
+ */
+export interface Visual {
+  /** Relógio (ms, performance.now()). */
+  readonly agora: number;
+  /** Posição do hacker em células, fracionária enquanto ele desliza. */
+  readonly jogador: Posicao;
+  /** Instante (ms) em que cada porta/ponte mudou de estado (anima a abertura). */
+  readonly mudancas: ReadonlyMap<string, number>;
+  readonly aviso: Aviso | null;
+  /** Até quando (ms) a moldura vermelha do alarme fica no mapa. */
+  readonly alarmeAte: number;
+  /** Instante (ms) da vitória (as estrelas entram uma a uma). */
+  readonly vitoriaEm: number;
+  /** Tutorial da fase 1-1, ou null quando não está ativo. */
+  readonly tutorial: Tutorial | null;
+  /** Bancada do Firewall espelhado: valores só para visualizar os cabos. */
+  readonly bancada: Valoracao;
+  /** A próxima Enter na vitória abre o relatório final (última fase). */
+  readonly ultimaFase: boolean;
 }
 
 /**

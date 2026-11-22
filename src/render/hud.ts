@@ -1,94 +1,116 @@
 import { estrelasPara, limiteAlerta } from '../jogo/regras';
 import type { Estado } from '../jogo/tipos';
-import { contornar, escrever, estrela, preencher, type Ctx } from './desenho';
-import { AREA_MAPA, BARRA, PAINEL, RODAPE, TELA, type Retangulo } from './layout';
-import { CORES } from './tema';
+import { AREA_MAPA, TELA, type RegiaoClicavel, type Visual } from './layout';
+import { button, estrela, ln, panel, rectF, rectS, T, toast, TX, type Ctx } from './primitivas';
+import { C } from './tema';
 
-/** Barra superior: nome da fase, nível de alerta "n / limite" e as 3 estrelas. */
-export function desenharBarra(ctx: Ctx, estado: Estado): void {
-  preencher(ctx, BARRA, CORES.painel);
-  preencher(ctx, { x: 0, y: BARRA.h - 1, w: BARRA.w, h: 1 }, CORES.bordaPainel);
-  const meio = BARRA.h / 2;
+/** Número do setor a partir do id da fase ("3-2" → "3"). */
+export const numeroDoSetor = (id: string): string => id.split('-')[0] ?? '';
 
-  escrever(ctx, `Fase ${estado.fase.id} · ${estado.fase.setor}`, 12, meio, { tamanho: 13, negrito: true });
+/** Barra superior: fase e setor, nível de alerta segmentado, estrelas ainda possíveis. */
+export function hud(ctx: Ctx, estado: Estado): void {
+  const { fase } = estado;
+  rectF(ctx, 0, 0, TELA.w, 28, C.panel);
+  rectF(ctx, 0, 28, TELA.w, 1, C.border);
+  let x = 10;
+  x += T(ctx, `FASE ${fase.id}`, x, 14.5, { size: 14, bold: true }) + 10;
+  T(ctx, `SETOR ${numeroDoSetor(fase.id)} · ${fase.setor.toUpperCase()}`, x, 14.5, { size: 11, color: C.dim });
 
-  // Alerta: um segmento por ponto. No limite, a barra fica vermelha (a próxima troca reinicia).
-  const limite = limiteAlerta(estado.fase);
-  const noLimite = estado.alerta >= limite;
-  const cor = noLimite ? CORES.perigo : CORES.texto;
-  escrever(ctx, 'ALERTA', 250, meio, { cor: CORES.textoSecundario });
-  const barra: Retangulo = { x: 300, y: meio - 6, w: 160, h: 12 };
-  const segmento = barra.w / Math.max(limite, 1);
-  for (let i = 0; i < limite; i++) {
-    const r = { x: barra.x + i * segmento + 1, y: barra.y, w: segmento - 2, h: barra.h };
-    if (i < estado.alerta) preencher(ctx, r, cor);
-    else contornar(ctx, r, CORES.bordaPainel);
+  // Alerta: vermelho cheio = usado, contorno = livre.
+  const maximo = Math.max(1, limiteAlerta(fase));
+  const alerta = Math.min(estado.alerta, maximo);
+  const ax = 318;
+  const sw = Math.max(4, Math.floor((110 - (maximo - 1) * 3) / maximo));
+  T(ctx, 'ALERTA', 268, 14.5, { size: 11, bold: true, color: C.dim });
+  for (let i = 0; i < maximo; i++) {
+    const sx = ax + i * (sw + 3);
+    if (i < alerta) rectF(ctx, sx, 9, sw, 11, C.danger);
+    else rectS(ctx, sx, 9, sw, 11, C.border);
   }
-  escrever(ctx, `${estado.alerta} / ${limite}`, 470, meio, { cor, negrito: true });
-
-  // Estrelas que o jogador ainda leva se terminar agora.
-  const estrelas = estado.situacao === 'vitoria' ? estado.estrelas : estrelasPara(estado.trocas, estado.fase.minimo, estado.erros);
-  for (let i = 0; i < 3; i++) {
-    estrela(ctx, 610 + i * 22, meio, 8, i < estrelas, CORES.jogador);
-  }
-}
-
-/** Rodapé: dica de controles em texto pequeno. */
-export function desenharRodape(ctx: Ctx): void {
-  escrever(
-    ctx,
-    'Setas/WASD mover · E interagir · Q scanner · R reiniciar · Esc pausa',
-    TELA.w / 2,
-    RODAPE.y + RODAPE.h / 2,
-    { cor: CORES.textoSecundario, alinhar: 'center' },
-  );
-}
-
-/**
- * Aviso curto (ex.: alerta estourado). Aparece e some; não pisca.
- * Fica no topo do mapa ou, com um desafio aberto, na linha de rodapé do desafio
- * (cobre a dica de teclas por um instante, e nada mais).
- */
-export function desenharAviso(ctx: Ctx, texto: string, cor: string, noRodapeDoDesafio = false): void {
-  const r: Retangulo = noRodapeDoDesafio
-    ? { x: AREA_MAPA.x + 8, y: AREA_MAPA.y + AREA_MAPA.h - 27, w: PAINEL.x + PAINEL.w - AREA_MAPA.x - 16, h: 24 }
-    : { x: AREA_MAPA.x + 8, y: AREA_MAPA.y + 8, w: AREA_MAPA.w - 16, h: 24 };
-  preencher(ctx, r, CORES.painel);
-  contornar(ctx, r, cor, 1);
-  escrever(ctx, texto, r.x + r.w / 2, r.y + r.h / 2, { cor, alinhar: 'center', negrito: true });
-}
-
-function caixaCentral(ctx: Ctx, altura: number, cor: string): Retangulo {
-  const r: Retangulo = {
-    x: AREA_MAPA.x + 40,
-    y: AREA_MAPA.y + (AREA_MAPA.h - altura) / 2,
-    w: AREA_MAPA.w - 80,
-    h: altura,
-  };
-  preencher(ctx, r, CORES.painel);
-  contornar(ctx, r, cor, 2);
-  return r;
-}
-
-/** Tela de fase concluída: estrelas e número de trocas comparado ao mínimo. */
-export function desenharVitoria(ctx: Ctx, estado: Estado, ultimaFase: boolean): void {
-  const r = caixaCentral(ctx, 150, CORES.sucesso);
-  const cx = r.x + r.w / 2;
-  escrever(ctx, 'FASE CONCLUÍDA', cx, r.y + 26, { cor: CORES.sucesso, tamanho: 16, negrito: true, alinhar: 'center' });
-  for (let i = 0; i < 3; i++) {
-    estrela(ctx, cx - 34 + i * 34, r.y + 62, 13, i < estado.estrelas, CORES.jogador);
-  }
-  const erros = estado.erros > 0 ? ` · erros: ${estado.erros}` : '';
-  escrever(ctx, `Trocas: ${estado.trocas} · mínimo: ${estado.fase.minimo}${erros}`, cx, r.y + 96, { alinhar: 'center' });
-  escrever(ctx, ultimaFase ? 'Enter: menu · R: jogar de novo' : 'Enter: próxima fase · R: jogar de novo', cx, r.y + 124, {
-    cor: CORES.textoSecundario,
-    alinhar: 'center',
+  T(ctx, `${estado.alerta}/${maximo}`, ax + maximo * (sw + 3) + 6, 14.5, {
+    size: 12,
+    bold: true,
+    color: estado.alerta >= maximo - 1 ? C.danger : C.text,
   });
+
+  // Estrelas que o jogador ainda leva se terminar agora (âmbar = possível, contorno = perdida).
+  const possiveis =
+    estado.situacao === 'vitoria' ? estado.estrelas : estrelasPara(estado.trocas, fase.minimo, estado.erros);
+  T(ctx, 'POSSÍVEIS', 608, 14.5, { size: 11, bold: true, color: C.dim, align: 'right' });
+  for (let i = 0; i < 3; i++) estrela(ctx, 624 + i * 18, 14, 7.5, i < possiveis);
 }
 
-export function desenharPausa(ctx: Ctx): void {
-  const r = caixaCentral(ctx, 90, CORES.texto);
-  const cx = r.x + r.w / 2;
-  escrever(ctx, 'PAUSADO', cx, r.y + 30, { tamanho: 16, negrito: true, alinhar: 'center' });
-  escrever(ctx, 'Esc: continuar · R: reiniciar · Enter: menu', cx, r.y + 62, { cor: CORES.textoSecundario, alinhar: 'center' });
+/** Mensagem curta no pé do mapa (porta aberta, alarme…). */
+export function avisoNoMapa(ctx: Ctx, visual: Visual): void {
+  const aviso = visual.aviso;
+  if (aviso === null || visual.agora >= aviso.ate) return;
+  toast(ctx, AREA_MAPA.x + 8, AREA_MAPA.y + AREA_MAPA.h - 32, AREA_MAPA.w - 16, aviso.variante, aviso.icone, aviso.texto);
+}
+
+/** Moldura vermelha fixa por 1 s quando o alarme toca (sem piscar). */
+export function molduraDeAlarme(ctx: Ctx, visual: Visual): void {
+  if (visual.agora < visual.alarmeAte) rectS(ctx, AREA_MAPA.x, AREA_MAPA.y, AREA_MAPA.w, AREA_MAPA.h, C.danger, 2);
+}
+
+const veu = (ctx: Ctx): void => rectF(ctx, AREA_MAPA.x + 1, AREA_MAPA.y + 1, AREA_MAPA.w - 2, AREA_MAPA.h - 2, 'rgba(10,17,26,0.8)');
+
+/** Fase concluída: estrelas (uma a cada 120 ms), trocas, mínimo e alerta. */
+export function vitoria(ctx: Ctx, estado: Estado, visual: Visual): RegiaoClicavel[] {
+  const { fase } = estado;
+  veu(ctx);
+  panel(ctx, 34, 98, 338, 212, {
+    v: 'ok',
+    title: `FASE ${fase.id} CONCLUÍDA`,
+    meta: `SETOR ${numeroDoSetor(fase.id)} · ${fase.setor.toUpperCase()}`,
+  });
+  TX(ctx, 'ACESSO LIBERADO', 203, 132, { size: 18, bold: true, color: C.ok, align: 'center' }, 0.15);
+  const decorrido = visual.agora - visual.vitoriaEm;
+  for (let i = 0; i < 3; i++) {
+    const apareceu = decorrido >= (i + 1) * 120;
+    estrela(ctx, 171 + i * 32, 162, 13, apareceu && i < estado.estrelas);
+  }
+  T(ctx, `${estado.estrelas} de 3 estrelas`, 203, 186, { size: 11, color: C.dim, align: 'center' });
+  ln(ctx, [[48, 198], [358, 198]], C.border, 1, [2, 3]);
+  const numeros: [string, string][] = [
+    ['TROCAS', String(estado.trocas)],
+    ['MÍNIMO', String(fase.minimo)],
+    ['ALERTA', `${estado.alerta}/${limiteAlerta(fase)}`],
+  ];
+  numeros.forEach(([rotulo, valor], i) => {
+    const cx = 103 + i * 100;
+    T(ctx, rotulo, cx, 212, { size: 11, color: C.dim, align: 'center' });
+    T(ctx, valor, cx, 230, { size: 16, bold: true, align: 'center' });
+  });
+  const extras = estado.trocas - fase.minimo + estado.erros;
+  if (extras <= 0) {
+    T(ctx, '✓ SOLUÇÃO ÓTIMA · trocas = mínimo', 203, 252, { size: 11, bold: true, color: C.ok, align: 'center' });
+  } else {
+    T(ctx, `${extras} acima do mínimo (trocas extras + erros)`, 203, 252, { size: 11, color: C.dim, align: 'center' });
+  }
+  const proxima = { x: 48, y: 270, w: 178, h: 28 };
+  const repetir = { x: 234, y: 270, w: 124, h: 28 };
+  button(ctx, proxima.x, proxima.y, proxima.w, proxima.h, visual.ultimaFase ? 'RELATÓRIO FINAL' : 'PRÓXIMA FASE', 'confirm', { key: 'Enter' });
+  button(ctx, repetir.x, repetir.y, repetir.w, repetir.h, 'REPETIR', 'default', { key: 'R' });
+  return [
+    { r: proxima, acao: { tipo: 'confirmar' } },
+    { r: repetir, acao: { tipo: 'reiniciar' } },
+  ];
+}
+
+export function pausa(ctx: Ctx): RegiaoClicavel[] {
+  veu(ctx);
+  panel(ctx, 54, 128, 298, 152, { v: 'focus', title: 'PAUSADO' });
+  T(ctx, 'Invasão em espera.', 203, 166, { size: 14, bold: true, align: 'center' });
+  T(ctx, 'Nada muda enquanto o jogo está pausado.', 203, 186, { size: 11, color: C.dim, align: 'center' });
+  const continuar = { x: 70, y: 206, w: 266, h: 26 };
+  const reiniciar = { x: 70, y: 238, w: 128, h: 26 };
+  const menu = { x: 208, y: 238, w: 128, h: 26 };
+  button(ctx, continuar.x, continuar.y, continuar.w, continuar.h, 'CONTINUAR', 'confirm', { key: 'Esc' });
+  button(ctx, reiniciar.x, reiniciar.y, reiniciar.w, reiniciar.h, 'REINICIAR', 'default', { key: 'R' });
+  button(ctx, menu.x, menu.y, menu.w, menu.h, 'MENU', 'default', { key: 'Enter' });
+  return [
+    { r: continuar, acao: { tipo: 'pausar' } },
+    { r: reiniciar, acao: { tipo: 'reiniciar' } },
+    { r: menu, acao: { tipo: 'confirmar' } },
+  ];
 }

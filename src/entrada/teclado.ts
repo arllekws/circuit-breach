@@ -3,7 +3,13 @@ import type { Acao } from '../jogo/tipos';
 // Entrada: traduz teclas em ações do jogo. Não decide regra nenhuma.
 
 /** Ação do jogo, ou "confirmar" (Enter), que navega entre telas. */
-export type Comando = Acao | { readonly tipo: 'confirmar' };
+export type Comando =
+  | Acao
+  | { readonly tipo: 'confirmar' }
+  /** M: liga/desliga o modo invasão (só visual). */
+  | { readonly tipo: 'efeitos' }
+  /** 1, 2, 3…: atalhos dos desafios (porta do Firewall, bancada do espelhado). */
+  | { readonly tipo: 'numero'; readonly n: number };
 
 const TECLAS: Readonly<Record<string, Comando>> = {
   arrowup: { tipo: 'mover', direcao: 'cima' },
@@ -19,9 +25,16 @@ const TECLAS: Readonly<Record<string, Comando>> = {
   r: { tipo: 'reiniciar' },
   escape: { tipo: 'pausar' },
   enter: { tipo: 'confirmar' },
+  m: { tipo: 'efeitos' },
+  '1': { tipo: 'numero', n: 1 },
+  '2': { tipo: 'numero', n: 2 },
+  '3': { tipo: 'numero', n: 3 },
 };
 
-/** Setas/WASD movem; E interage; Q usa o Scanner; R reinicia; Esc pausa; Enter confirma. */
+/**
+ * Setas/WASD movem; E interage; Q usa o Scanner; R reinicia; Esc pausa; Enter confirma;
+ * M liga/desliga o modo invasão; 1–3 são atalhos nos desafios.
+ */
 export function comandoDaTecla(tecla: string): Comando | null {
   return TECLAS[tecla.toLowerCase()] ?? null;
 }
