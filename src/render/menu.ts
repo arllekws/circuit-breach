@@ -68,23 +68,23 @@ export function desenharMenu(ctx: Ctx, fases: readonly Fase[], progresso: Progre
   TY(
     ctx,
     [
-      '// LAB-07 · SISTEMA DE SEGURANÇA',
-      '// conectando ao LAB-07 ...',
-      `// ${vencidas} de ${fases.length} fases comprometidas`,
+      '> ssh hacker@lab-07 --secure',
+      '> handshake ... OK',
+      `> ${vencidas}/${fases.length} setores comprometidos`,
       proximaSetor === undefined
-        ? '// todos os setores invadidos'
-        : `// setor ${numeroDoSetor(proximaSetor.id)} · ${proximaSetor.setor.toUpperCase()} aguardando invasão`,
+        ? '> root access granted // todos os setores invadidos'
+        : `> alvo: SETOR ${numeroDoSetor(proximaSetor.id)} // ${proximaSetor.setor.toUpperCase()}`,
     ],
     16,
     22,
-    { size: 11, color: C.dim },
+    { size: 11, color: C.term },
   );
   TX(ctx, 'CIRCUIT', 16, 54, { size: 30, bold: true }, 0.1);
-  const bw = TX(ctx, 'BREACH', 16, 86, { size: 30, bold: true }, 0.3);
+  const bw = TX(ctx, 'BREACH', 16, 86, { size: 30, bold: true, color: C.term }, 0.3);
   rectF(ctx, 16 + bw + 6, 74, 12, 24, C.amber);
-  T(ctx, 'O Hacker Lógico', 16, 114, { size: 14 });
+  T(ctx, '> O Hacker Lógico', 16, 114, { size: 12, color: C.dim });
 
-  panel(ctx, 16, 134, 220, 70, { title: 'PROGRESSO', meta: `${vencidas}/${fases.length} FASES` });
+  panel(ctx, 16, 134, 220, 70, { title: 'STATUS // PROGRESSO', meta: `${vencidas}/${fases.length} FASES` });
   estrela(ctx, 30, 168, 9, true);
   const tw = T(ctx, String(total), 46, 168, { size: 22, bold: true });
   T(ctx, `/ ${fases.length * 3} estrelas`, 50 + tw, 169, { size: 12, color: C.dim });
@@ -98,16 +98,16 @@ export function desenharMenu(ctx: Ctx, fases: readonly Fase[], progresso: Progre
   // Fase escolhida.
   const escolhida = fases[selecionada];
   const liberada = faseLiberada(ids, progresso, selecionada);
-  panel(ctx, 16, 214, 220, 152, { v: 'focus', title: 'ALVO SELECIONADO' });
+  panel(ctx, 16, 214, 220, 152, { v: 'focus', title: 'ALVO // TARGET' });
   if (escolhida !== undefined) {
     T(ctx, escolhida.id, 28, 248, { size: 24, bold: true, color: liberada ? C.amber : C.dim });
     const titulo = wrapLines(ctx, escolhida.titulo, 196, 14, true);
     T(ctx, titulo[0] ?? '', 28, 274, { size: 14, bold: true, color: liberada ? C.text : C.dim });
     T(ctx, `SETOR ${numeroDoSetor(escolhida.id)} · ${escolhida.setor.toUpperCase()}`, 28, 292, { size: 11, color: C.dim });
-    T(ctx, 'NOVIDADE', 28, 312, { size: 11, color: C.dim });
-    T(ctx, novidade(fases, selecionada), 96, 312, { size: 12, bold: true });
+    T(ctx, 'PAYLOAD', 28, 312, { size: 11, color: C.dim });
+    T(ctx, novidade(fases, selecionada), 96, 312, { size: 12, bold: true, color: C.term });
     const botao = { x: 28, y: 328, w: 196, h: 26 };
-    button(ctx, botao.x, botao.y, botao.w, botao.h, liberada ? 'INVADIR' : 'BLOQUEADA', liberada ? 'confirm' : 'disabled', liberada ? { key: 'Enter' } : {});
+    button(ctx, botao.x, botao.y, botao.w, botao.h, liberada ? 'EXECUTAR INVASÃO' : 'ACESSO NEGADO', liberada ? 'confirm' : 'disabled', liberada ? { key: 'Enter' } : {});
     if (liberada) regioes.push({ r: botao, acao: { tipo: 'confirmar' } });
   }
 
@@ -156,9 +156,9 @@ export function desenharMenu(ctx: Ctx, fases: readonly Fase[], progresso: Progre
   }
 
   footer(ctx, [
-    [['←↑↓→', 'WASD'], 'escolher fase'],
-    ['Enter', 'invadir'],
-    ['M', 'efeitos'],
+    [['←↑↓→', 'WASD'], 'navegar'],
+    ['Enter', 'executar'],
+    ['M', 'fx/terminal'],
   ]);
   return regioes;
 }

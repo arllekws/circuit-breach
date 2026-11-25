@@ -67,8 +67,8 @@ function montagem(ctx: Ctx, estado: Estado, d: Montagem, aberto: Aberto<'montage
   const vInspecao = linhas[inspecionada] ?? {};
 
   panel(ctx, 8, 34, 428, 338, {
-    title: 'FIREWALL · MONTAGEM DE CIRCUITO',
-    meta: estado.erros > 0 ? `${estado.erros} TESTE${estado.erros > 1 ? 'S' : ''} ✕` : 'SEM TESTES',
+    title: 'FIREWALL // CIRCUIT BUILD',
+    meta: estado.erros > 0 ? `${estado.erros} FAIL${estado.erros > 1 ? 'S' : ''} ✕` : 'NO FAILS',
     metaColor: estado.erros > 0 ? C.danger : C.dim,
     metaBold: estado.erros > 0,
   });
@@ -145,8 +145,8 @@ function montagem(ctx: Ctx, estado: Estado, d: Montagem, aberto: Aberto<'montage
 
   // Tabela-verdade: alvo × seu circuito.
   panel(ctx, 444, 34, 228, 338, {
-    title: 'TABELA-VERDADE',
-    meta: montada === null ? 'INCOMPLETO' : `${batem}/${linhas.length} OK`,
+    title: 'TRUTH TABLE // DIFF',
+    meta: montada === null ? 'INCOMPLETE' : `${batem}/${linhas.length} OK`,
     metaColor: montada === null ? C.dim : batem === linhas.length ? C.ok : C.danger,
     metaBold: montada !== null,
   });
@@ -183,7 +183,7 @@ function montagem(ctx: Ctx, estado: Estado, d: Montagem, aberto: Aberto<'montage
     else rectF(ctx, sx, 236, segmento, 8, seu === alvoDe(v) ? C.ok : C.danger);
   });
   T(ctx, montada === null ? 'monte o circuito para comparar' : `${batem} de ${linhas.length} linhas batem com o alvo`, 456, 258, { size: 11 });
-  tab(ctx, 452, 278, 'DIAGNÓSTICO');
+  tab(ctx, 452, 278, 'DIAGNOSTIC // LOG');
   const divergentes = linhas.filter((v) => seuDe(v) !== null && seuDe(v) !== alvoDe(v)).map((v) => nomes.map((n) => v[n]).join(''));
   const diagnostico =
     montada === null
@@ -221,13 +221,13 @@ function espelhado(ctx: Ctx, d: Espelho, aberto: Aberto<'espelho'>, visual: Visu
   T(ctx, 'alternam', 22 + nomes.length * 50, 104.5, { size: 11, color: C.dim });
 
   const valorOriginal = paraBit(avaliar(rodada.original, bancada));
-  panel(ctx, 196, 40, 288, 82, { title: 'PAINEL ORIGINAL' });
+  panel(ctx, 196, 40, 288, 82, { title: 'ORIGINAL PANEL' });
   T(ctx, formatar(rodada.original), 330, 78, { size: 22, bold: true, align: 'center' });
   T(ctx, '=', 410, 78, { size: 14, bold: true, color: C.dim });
   val(ctx, 424, 67, valorOriginal, 22, 14);
   T(ctx, 'equivalente = mesma tabela-verdade', 340, 106, { size: 11, color: C.dim, align: 'center' });
 
-  panel(ctx, 502, 40, 170, 82, { title: `RODADA ${aberto.rodada + 1} DE ${d.rodadas.length}` });
+  panel(ctx, 502, 40, 170, 82, { title: `ROUND ${aberto.rodada + 1}/${d.rodadas.length}` });
   for (let i = 0; i < d.rodadas.length; i++) {
     const px = 516 + i * 34;
     const atual = i === aberto.rodada;
@@ -343,8 +343,8 @@ function nucleo(ctx: Ctx, d: Prova, aberto: Aberto<'prova'>, visual: Visual): Re
   const pedida = d.rodadas[aberto.rodada];
   if (pedida === undefined) return regioes;
   panel(ctx, 8, 34, 440, 338, {
-    title: `NÚCLEO CENTRAL · PROVA ${aberto.rodada + 1} DE ${d.rodadas.length}`,
-    meta: 'passo inválido: +1 alerta',
+    title: `CORE // PROOF ${aberto.rodada + 1}/${d.rodadas.length}`,
+    meta: 'invalid step: +1 ALERT',
   });
 
   // Linhas da prova: premissas com o log completo (sem reticências); derivadas com a regra.

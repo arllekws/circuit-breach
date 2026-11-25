@@ -12,9 +12,10 @@ export function hud(ctx: Ctx, estado: Estado): void {
   const { fase } = estado;
   rectF(ctx, 0, 0, TELA.w, 28, C.panel);
   rectF(ctx, 0, 28, TELA.w, 1, C.border);
+  rectF(ctx, 0, 27, TELA.w, 1, C.grid);
   let x = 10;
-  x += T(ctx, `FASE ${fase.id}`, x, 14.5, { size: 14, bold: true }) + 10;
-  T(ctx, `SETOR ${numeroDoSetor(fase.id)} · ${fase.setor.toUpperCase()}`, x, 14.5, { size: 11, color: C.dim });
+  x += T(ctx, `> FASE ${fase.id}`, x, 14.5, { size: 13, bold: true, color: C.term }) + 10;
+  T(ctx, `SETOR ${numeroDoSetor(fase.id)} // ${fase.setor.toUpperCase()}`, x, 14.5, { size: 11, color: C.dim });
 
   // Alerta: vermelho cheio = usado, contorno = livre.
   const maximo = Math.max(1, limiteAlerta(fase));
@@ -36,7 +37,7 @@ export function hud(ctx: Ctx, estado: Estado): void {
   // Estrelas que o jogador ainda leva se terminar agora (âmbar = possível, contorno = perdida).
   const possiveis =
     estado.situacao === 'vitoria' ? estado.estrelas : estrelasPara(estado.trocas, fase.minimo, estado.erros);
-  T(ctx, 'POSSÍVEIS', 608, 14.5, { size: 11, bold: true, color: C.dim, align: 'right' });
+  T(ctx, 'RANK', 608, 14.5, { size: 11, bold: true, color: C.dim, align: 'right' });
   for (let i = 0; i < 3; i++) estrela(ctx, 624 + i * 18, 14, 7.5, i < possiveis);
 }
 
@@ -60,10 +61,10 @@ export function vitoria(ctx: Ctx, estado: Estado, visual: Visual): RegiaoClicave
   veu(ctx);
   panel(ctx, 34, 98, 338, 212, {
     v: 'ok',
-    title: `FASE ${fase.id} CONCLUÍDA`,
+    title: `FASE ${fase.id} // BREACHED`,
     meta: `SETOR ${numeroDoSetor(fase.id)} · ${fase.setor.toUpperCase()}`,
   });
-  TX(ctx, 'ACESSO LIBERADO', 203, 132, { size: 18, bold: true, color: C.ok, align: 'center' }, 0.15);
+  TX(ctx, '> ACCESS GRANTED', 203, 132, { size: 18, bold: true, color: C.ok, align: 'center' }, 0.15);
   const decorrido = visual.agora - visual.vitoriaEm;
   for (let i = 0; i < 3; i++) {
     const apareceu = decorrido >= (i + 1) * 120;
@@ -99,9 +100,9 @@ export function vitoria(ctx: Ctx, estado: Estado, visual: Visual): RegiaoClicave
 
 export function pausa(ctx: Ctx): RegiaoClicavel[] {
   veu(ctx);
-  panel(ctx, 54, 128, 298, 152, { v: 'focus', title: 'PAUSADO' });
-  T(ctx, 'Invasão em espera.', 203, 166, { size: 14, bold: true, align: 'center' });
-  T(ctx, 'Nada muda enquanto o jogo está pausado.', 203, 186, { size: 11, color: C.dim, align: 'center' });
+  panel(ctx, 54, 128, 298, 152, { v: 'focus', title: 'PAUSA // SESSION HOLD' });
+  T(ctx, '> conexão suspensa', 203, 166, { size: 14, bold: true, color: C.term, align: 'center' });
+  T(ctx, 'O sistema aguarda seu próximo comando.', 203, 186, { size: 11, color: C.dim, align: 'center' });
   const continuar = { x: 70, y: 206, w: 266, h: 26 };
   const reiniciar = { x: 70, y: 238, w: 128, h: 26 };
   const menu = { x: 208, y: 238, w: 128, h: 26 };

@@ -41,7 +41,7 @@ const RODAPE_DA_FASE: readonly ItemDoRodape[] = [
   ['Q', 'scanner'],
   ['R', 'reiniciar'],
   ['Esc', 'pausar'],
-  ['M', 'efeitos'],
+  ['M', 'fx/terminal'],
 ];
 
 const LETRA: Readonly<Record<Circuito['tipo'], string>> = { porta: 'D', ponte: 'B', laser: 'L' };
@@ -99,8 +99,8 @@ function resultadoDoCircuito(estado: Estado, circuito: Circuito, raiz: NoExibido
 /** Lista TREINAMENTO do tutorial (✓ feito, ▸ atual, · pendente). */
 function listaDoTutorial(ctx: Ctx, x: number, y: number, feitos: readonly boolean[]): void {
   const passo = passoAtual(feitos);
-  tab(ctx, x, y, 'TREINAMENTO', 'focus');
-  T(ctx, passo > PASSOS.length ? 'CONCLUÍDO' : `PASSO ${passo}/${PASSOS.length}`, 664, y + 8.5, {
+  tab(ctx, x, y, 'TRAINING // BOOTCAMP', 'focus');
+  T(ctx, passo > PASSOS.length ? 'COMPLETE' : `PASSO ${passo}/${PASSOS.length}`, 664, y + 8.5, {
     size: 11,
     bold: true,
     color: passo > PASSOS.length ? C.ok : C.amber,
@@ -119,7 +119,7 @@ function listaDoTutorial(ctx: Ctx, x: number, y: number, feitos: readonly boolea
 function dica(ctx: Ctx, estado: Estado, ops: readonly Exclude<Operador, 'unk'>[], y: number): void {
   const x = PAINEL.x + 8;
   const fim = PAINEL.y + PAINEL.h - 8;
-  tab(ctx, x, y, 'DICA');
+  tab(ctx, x, y, 'HINT // TERMINAL');
   let yy = y + 30;
   // Cabem a dica e os cartões? Senão, a dica vai em 11 px e os cartões que não couberem saem.
   let tamanho = 12;
@@ -144,7 +144,7 @@ function dica(ctx: Ctx, estado: Estado, ops: readonly Exclude<Operador, 'unk'>[]
     T(ctx, `${OPS[op][1]}: ${SIGNIFICADO[op]}`, x + 28, yy + 0.5, { size: 11 });
     yy += 26;
   }
-  if (yy - 10 <= fim - 18) keyHint(ctx, x, fim - 18, 'Q', 'abrir Scanner · +2 alerta', C.text);
+  if (yy - 10 <= fim - 18) keyHint(ctx, x, fim - 18, 'Q', 'scan --truth-table  [+2 ALERTA]', C.term);
 }
 
 /** Painel do circuito do elemento mais próximo. Devolve onde ficaram entradas e resultado. */
@@ -153,12 +153,12 @@ function painelDoCircuito(ctx: Ctx, estado: Estado, visual: Visual): { entrada: 
   const x = PAINEL.x + 8;
   const vazio = { entrada: { x: 0, y: 0, w: 0, h: 0 }, resultado: { x: 0, y: 0, w: 0, h: 0 }, inferior: 220 };
   if (circuito === undefined) {
-    panel(ctx, PAINEL.x, PAINEL.y, PAINEL.w, PAINEL.h, { title: 'MÓDULO' });
+    panel(ctx, PAINEL.x, PAINEL.y, PAINEL.w, PAINEL.h, { title: 'MODULO // NO SIGNAL' });
     return vazio;
   }
   panel(ctx, PAINEL.x, PAINEL.y, PAINEL.w, PAINEL.h, {
-    title: `MÓDULO · ${rotuloDoCircuito(circuito, estado.fase)}`,
-    meta: circuito.tipo === 'laser' ? 'SEGURO COM 0' : 'ATIVA COM 1',
+    title: `MODULO // ${rotuloDoCircuito(circuito, estado.fase)}`,
+    meta: circuito.tipo === 'laser' ? 'SAFE=0' : 'OPEN=1',
   });
   T(ctx, formatar(circuito.formula), PAINEL.x + 12, 66, { size: 18, bold: true });
   ln(ctx, [[x, 84], [PAINEL.x + PAINEL.w - 8, 84]], C.border, 1, [2, 3]);
@@ -177,7 +177,7 @@ function painelDoCircuito(ctx: Ctx, estado: Estado, visual: Visual): { entrada: 
   if (escaneado) {
     const tabela = tabelaDoScanner(circuito, estado.valoracao);
     const vars = tabela.colunas.slice(0, tabela.proposicoes);
-    tab(ctx, x, inferior, 'SCANNER · TABELA-VERDADE');
+    tab(ctx, x, inferior, 'SCANNER // TRUTH TABLE');
     const alvos = tabela.linhas.filter((l) => l.alvo).length;
     const tutorial = visual.tutorial !== null && passoAtual(visual.tutorial) <= PASSOS.length;
     T(ctx, tutorial ? `PASSO ${passoAtual(visual.tutorial ?? [])}/6` : `${alvos} ${alvos === 1 ? 'alvo' : 'alvos'}`, 664, inferior + 8.5, {

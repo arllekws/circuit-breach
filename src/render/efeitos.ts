@@ -19,6 +19,11 @@ export const FX = {
   get ligado(): boolean {
     return this.nivel > 0;
   },
+  get glitch(): boolean {
+    if (this.nivel < 2) return false;
+    const pulso = Math.sin(this.t * 9.7) * Math.sin(this.t * 3.1 + 0.7);
+    return pulso > 0.92;
+  },
 };
 
 /** Chama um gancho do modo invasão, se ele estiver ligado e registrado. */

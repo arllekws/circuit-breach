@@ -1,6 +1,7 @@
 import { FX, hash } from './efeitos';
 import type { Retangulo } from './layout';
-import { ln, rectF, T, type Ctx, type Fio } from './primitivas';
+import { TELA } from './layout';
+import { ln, rectF, rectS, T, W, type Ctx, type Fio } from './primitivas';
 import { C, fonte } from './tema';
 
 // Modo invasão (porte de cb-fx.js): animações ambientes OPCIONAIS. Só desenham em áreas
@@ -62,6 +63,10 @@ function registro(ctx: Ctx, x: number, y: number, w: number, h: number, linhas: 
     const yy = y + h - rh / 2 - (n - i) * rh + subida - 1;
     const mostrado = i === n ? texto.slice(0, Math.floor(Math.min(1, f * 2.2) * texto.length)) : texto;
     T(ctx, mostrado, x, yy, { size: 11, color: cor ?? C.dim });
+    if (i === n && mostrado.length < texto.length) {
+      const cw = W(ctx, mostrado, 11);
+      rectF(ctx, x + cw + 2, yy - 5, 6, 10, cor ?? C.term);
+    }
   }
   ctx.restore();
 }
@@ -92,8 +97,61 @@ function pulsos(ctx: Ctx, fios: readonly Fio[]): void {
   }
 }
 
+function scanlines(ctx: Ctx): void {
+  const alpha = FX.nivel >= 2 ? 0.08 : 0.045;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  for (let y = 0; y < TELA.h; y += 3) rectF(ctx, 0, y, TELA.w, 1, C.crt);
+  ctx.restore();
+  if (FX.nivel >= 2) {
+    const y = (FX.t * 42) % TELA.h;
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    rectF(ctx, 0, y, TELA.w, 2, C.term);
+    ctx.restore();
+  }
+}
+
+function vinheta(ctx: Ctx): void {
+  const a = FX.nivel >= 2 ? 0.14 : 0.08;
+  ctx.save();
+  ctx.globalAlpha = a;
+  rectF(ctx, 0, 0, TELA.w, 10, C.bg);
+  rectF(ctx, 0, TELA.h - 10, TELA.w, 10, C.bg);
+  rectF(ctx, 0, 0, 10, TELA.h, C.bg);
+  rectF(ctx, TELA.w - 10, 0, 10, TELA.h, C.bg);
+  ctx.restore();
+}
+
+function glitch(ctx: Ctx): void {
+  if (!FX.glitch) return;
+  const faixas = FX.nivel >= 2 ? 4 : 2;
+  ctx.save();
+  for (let i = 0; i < faixas; i++) {
+    const y = hash(i, Math.floor(FX.t * 20)) % (TELA.h - 8);
+    const h = 2 + (hash(i, 99) % 4);
+    ctx.globalAlpha = 0.08;
+    rectF(ctx, 0, y, TELA.w, h, C.term);
+    ctx.globalAlpha = 0.05;
+    rectF(ctx, (hash(i, 7) % 18) - 9, y + 1, TELA.w, 1, C.one);
+  }
+  ctx.restore();
+}
+
+function overlayTerminal(ctx: Ctx): void {
+  scanlines(ctx);
+  vinheta(ctx);
+  glitch(ctx);
+  if (FX.nivel >= 2) {
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    rectS(ctx, 1, 1, TELA.w - 2, TELA.h - 2, C.border, 1);
+    ctx.restore();
+  }
+}
+
 FX.ganchos['fundo'] = ((ctx: Ctx, tela: string) => {
-  if (tela === 'menu') chuva(ctx, 250, 0, 430, 372, 1);
+  if (tela === 'menu' || tela === 'boot') chuva(ctx, 250, 0, 430, 372, 1);
   else if (tela === 'final') chuva(ctx, 0, 0, 680, 372, 2);
 }) as never;
 
@@ -112,3 +170,5 @@ FX.ganchos['fios'] = pulsos as never;
 FX.ganchos['barramento'] = ((ctx: Ctx) => {
   rectF(ctx, 264, 45 + ((FX.t * 40) % 280), 5, 8, C.ok);
 }) as never;
+
+FX.ganchos['overlay'] = overlayTerminal as never;

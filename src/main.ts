@@ -21,8 +21,9 @@ import { avancarTutorial, novoTutorial, type Tutorial } from './jogo/tutorial';
 import type { Estado, Fase, Posicao } from './jogo/tipos';
 import { variaveis } from './logica/tabelaVerdade';
 import type { Bit } from './logica/tipos';
+import { telaBoot } from './render/boot';
 import { telaDeDesafio } from './render/desafios';
-import { FX, type NivelDeEfeitos } from './render/efeitos';
+import { FX, fx, type NivelDeEfeitos } from './render/efeitos';
 import { rotuloDoCircuito, telaDeFase } from './render/fase';
 import { telaFinal } from './render/final';
 import { ajustarCanvas, TELA, type Aviso, type RegiaoClicavel, type Visual } from './render/layout';
@@ -55,7 +56,7 @@ function iniciar(fases: readonly Fase[]): void {
   const ids = fases.map((fase) => fase.id);
   let progresso: Progresso = carregarProgresso(window.localStorage);
   let estatisticas: Estatisticas = carregarEstatisticas(window.localStorage);
-  let tela: 'menu' | 'fase' | 'final' = 'menu';
+  let tela: 'boot' | 'menu' | 'fase' | 'final' = 'boot';
   let indice = 0; // fase escolhida no menu / fase em jogo
   let estado: Estado = novoEstado(fases[0] as Fase);
   FX.nivel = carregarNivelDeEfeitos();
@@ -93,39 +94,39 @@ function iniciar(fases: readonly Fase[]): void {
         mudancas.set(porta.id, agora);
         if (depois) abertas.push(`${rotuloDoCircuito(porta, novo.fase)} ${porta.tipo === 'ponte' ? 'ESTENDIDA' : 'ABERTA'}`);
       }
-      if (abertas.length > 0) avisar('ok', '✓', `${abertas.join(' · ')} · saída 1`);
+        if (abertas.length > 0) avisar('ok', '✓', `${abertas.join(' // ')} // output=1`);
     }
     switch (novo.evento) {
       case 'troca':
         // O aviso de porta aberta (mais importante) não é apagado pelo de alerta.
         if (aviso === null || agora >= aviso.ate || aviso.variante !== 'ok') {
-          avisar('default', 'i', `ALERTA +1 · ${novo.alerta}/${limiteAlerta(novo.fase)}`, 1200);
+          avisar('default', '>', `ALERTA +1 // ${novo.alerta}/${limiteAlerta(novo.fase)}`, 1200);
         }
         break;
       case 'scanner':
-        avisar('default', 'i', 'SCANNER · tabela-verdade · +2 alerta');
+        avisar('default', '>', 'SCAN EXECUTADO // truth-table [+2 ALERTA]');
         break;
       case 'alarme':
         alarmeAte = agora + 1000;
-        avisar('danger', '✕', 'LASER DISPAROU · fase reiniciada', 2400);
+        avisar('danger', 'X', 'INTRUSION DETECTED // laser trigger -> reset', 2400);
         break;
       case 'alerta_estourou':
         alarmeAte = agora + 1000;
-        avisar('danger', '!', 'ALERTA MÁXIMO · seguranças a caminho · reinício', 2400);
+        avisar('danger', '!', 'ALERTA MAXIMO // trace iniciado -> reset', 2400);
         break;
       case 'erro': {
         const motivo = {
-          montagem: 'CIRCUITO NÃO EQUIVALENTE',
-          espelho: 'CABO NÃO EQUIVALENTE · alarme',
-          terminais: 'MARCAÇÃO INCONSISTENTE',
-          prova: 'PASSO INVÁLIDO',
+          montagem: 'CIRCUITO NAO EQUIVALENTE',
+          espelho: 'CABO NAO EQUIVALENTE // alarme',
+          terminais: 'MARCACAO INCONSISTENTE',
+          prova: 'PASSO INVALIDO',
         }[novo.desafio?.tipo ?? 'montagem'];
-        avisar('danger', '!', `${motivo} · +1 alerta · ${novo.alerta}/${limiteAlerta(novo.fase)}`, 2400);
+        avisar('danger', '!', `${motivo} // +1 ALERTA ${novo.alerta}/${limiteAlerta(novo.fase)}`, 2400);
         break;
       }
       case 'desafio_resolvido': {
         const nome = estado.desafio?.nome ?? '';
-        avisar('ok', '✓', `TERMINAL ${nome} LIBERADO · ${nome} = 1`, 2400);
+        avisar('ok', '✓', `TERMINAL ${nome} UNLOCKED // ${nome}=1`, 2400);
         break;
       }
       case 'vitoria':
@@ -203,6 +204,10 @@ function iniciar(fases: readonly Fase[]): void {
       trocarEfeitos();
       return;
     }
+    if (tela === 'boot') {
+      if (comando.tipo === 'confirmar') tela = 'menu';
+      return;
+    }
     if (tela === 'menu') {
       comandoNoMenu(comando);
       return;
@@ -232,9 +237,10 @@ function iniciar(fases: readonly Fase[]): void {
   // ?tela=final abre o relatório; ?efeitos=0|1|2 escolhe o modo invasão.
   if (import.meta.env.DEV) {
     const parametros = new URLSearchParams(location.search);
+    const telaParam = parametros.get('tela');
+    if (telaParam === 'final' || telaParam === 'menu' || telaParam === 'boot') tela = telaParam;
     const fase = ids.indexOf(parametros.get('fase') ?? '');
     if (fase >= 0) abrirFase(fase);
-    if (parametros.get('tela') === 'final') tela = 'final';
     const efeitos = parametros.get('efeitos');
     if (efeitos === '0' || efeitos === '1' || efeitos === '2') FX.nivel = Number(efeitos) as NivelDeEfeitos;
     for (const tecla of (parametros.get('teclas') ?? '').split(',')) {
@@ -254,7 +260,8 @@ function iniciar(fases: readonly Fase[]): void {
     FX.tela = tela;
     rectF(ctx, 0, 0, TELA.w, TELA.h, C.bg);
 
-    if (tela === 'menu') regioes = desenharMenu(ctx, fases, progresso, indice);
+    if (tela === 'boot') regioes = telaBoot(ctx);
+    else if (tela === 'menu') regioes = desenharMenu(ctx, fases, progresso, indice);
     else if (tela === 'final') regioes = telaFinal(ctx, fases, progresso, estatisticas);
     else {
       const t = Math.min(1, (agora - deslize.inicio) / ANIMACAO_MS);
@@ -274,6 +281,7 @@ function iniciar(fases: readonly Fase[]): void {
       };
       regioes = estado.desafio !== null ? telaDeDesafio(ctx, estado, visual) : telaDeFase(ctx, estado, visual);
     }
+    fx('overlay', ctx);
     requestAnimationFrame(quadro);
   };
   requestAnimationFrame(quadro);

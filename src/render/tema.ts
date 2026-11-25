@@ -28,6 +28,10 @@ export const C = {
   dim: '#6B8499',
   /** Texto escuro sobre cor cheia. */
   ink: '#0A111A',
+  /** Acento de terminal (decorativo, nunca o único sinal lógico). */
+  term: '#7CFF9B',
+  /** Scanline/ruído sutil. */
+  crt: '#0D1824',
 } as const;
 
 /** Fonte monoespaçada; as alternativas cobrem quem não tem a JetBrains Mono instalada. */

@@ -29,15 +29,15 @@ export function telaFinal(ctx: Ctx, fases: readonly Fase[], progresso: Progresso
 
   if (FX.ligado) rectF(ctx, 20, 16, W(ctx, '> breach --status', 11) + 16, 20, C.bg);
   TY(ctx, ['> breach --status'], 24, 26, { size: 11, color: C.dim }, Infinity, 24);
-  tab(ctx, 24, 38, vencidas === fases.length ? 'SISTEMA COMPROMETIDO' : 'INVASÃO PARCIAL', vencidas === fases.length ? 'ok' : 'focus');
+  tab(ctx, 24, 38, vencidas === fases.length ? 'SYSTEM COMPROMISED' : 'PARTIAL BREACH', vencidas === fases.length ? 'ok' : 'focus');
   placa('CIRCUIT', 24, 86, { size: 34, bold: true }, 0.4);
-  placa('BREACH', 24, 122, { size: 34, bold: true }, 0.55);
-  placa(vencidas === fases.length ? 'Invasão concluída.' : `${vencidas} de ${fases.length} fases invadidas.`, 24, 154, { size: 14, bold: true });
+  placa('BREACH', 24, 122, { size: 34, bold: true, color: C.term }, 0.55);
+  placa(vencidas === fases.length ? '> root access granted' : `> ${vencidas}/${fases.length} nodes breached`, 24, 154, { size: 14, bold: true, color: C.term });
   const mensagem =
     vencidas === fases.length
       ? 'Você atravessou os 5 setores usando só lógica proposicional.'
       : `Faltam ${fases.length - vencidas} fases para comprometer o sistema inteiro.`;
-  wrapLines(ctx, mensagem, 296, 12).forEach((l, i) => placa(l, 24, 176 + i * 16));
+  wrapLines(ctx, mensagem, 296, 12).forEach((l, i) => placa(l, 24, 176 + i * 16, { color: C.text }));
 
   // Estrelas: contam até o total no modo invasão; estáticas sem ele.
   const mostradas = FX.ligado ? Math.max(0, Math.min(estrelas, Math.floor((FX.t - FX.t0 - 0.9) / 0.035))) : estrelas;
@@ -85,7 +85,7 @@ export function telaFinal(ctx: Ctx, fases: readonly Fase[], progresso: Progresso
   }
 
   // Relatório por setor.
-  panel(ctx, 348, 20, 316, 290, { title: 'RELATÓRIO DA INVASÃO', meta: `${vencidas}/${fases.length} FASES` });
+  panel(ctx, 348, 20, 316, 290, { title: 'BREACH REPORT // LOG', meta: `${vencidas}/${fases.length} NODES` });
   const setores = Math.ceil(fases.length / FASES_POR_LINHA);
   for (let s = 0; s < setores; s++) {
     const daLinha = fases.slice(s * FASES_POR_LINHA, (s + 1) * FASES_POR_LINHA);
@@ -130,13 +130,13 @@ export function telaFinal(ctx: Ctx, fases: readonly Fase[], progresso: Progresso
     T(ctx, sub, x, 280, { size: 11, color: C.dim });
   });
 
-  placa('Obrigado por jogar.', 348, 330, { size: 12 });
+  placa('> session terminated. Obrigado por jogar.', 348, 330, { size: 11, color: C.dim });
   const voltar = { x: 348, y: 342, w: 316, h: 28 };
-  button(ctx, voltar.x, voltar.y, voltar.w, voltar.h, 'VOLTAR AO MENU', 'confirm', { key: 'Enter' });
+  button(ctx, voltar.x, voltar.y, voltar.w, voltar.h, 'RETURN TO MENU', 'confirm', { key: 'Enter' });
   footer(ctx, [
     ['Enter', 'menu'],
-    ['R', 'rever créditos'],
-    ['M', 'efeitos'],
+    ['R', 'replay log'],
+    ['M', 'fx/terminal'],
   ]);
   return [{ r: voltar, acao: { tipo: 'confirmar' } }];
 }
